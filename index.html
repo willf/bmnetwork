@@ -873,6 +873,65 @@
       };
 
       const COLORS = { Poem: "#2b8cbe", Manuscript: "#222" };
+
+      // Function to calculate color intensity based on connection count
+      function getNodeColor(nodeType, connectionCount, maxConnections) {
+        const baseColor = COLORS[nodeType];
+        const intensity = Math.max(
+          0.3,
+          Math.min(1.0, connectionCount / Math.max(1, maxConnections))
+        );
+
+        if (nodeType === "Poem") {
+          // For poems (blue), adjust opacity and saturation
+          const r = 43;
+          const g = 140;
+          const b = 190;
+          return `rgba(${r}, ${g}, ${b}, ${intensity})`;
+        } else {
+          // For manuscripts (dark), create more dramatic variation
+          // Use a wider range from light gray to black for better differentiation
+          const minLightness = 220; // Light gray for low connections
+          const maxLightness = 34; // Dark gray/black for high connections
+          const lightness = Math.floor(
+            minLightness - (minLightness - maxLightness) * intensity
+          );
+          return `rgb(${lightness}, ${lightness}, ${lightness})`;
+        }
+      }
+
+      // Separate scaling function for better manuscript differentiation
+      function getNodeColorSeparate(
+        nodeType,
+        connectionCount,
+        maxPoemConnections,
+        maxManuscriptConnections
+      ) {
+        const maxForType =
+          nodeType === "Poem" ? maxPoemConnections : maxManuscriptConnections;
+        const intensity = Math.max(
+          0.3,
+          Math.min(1.0, connectionCount / Math.max(1, maxForType))
+        );
+
+        if (nodeType === "Poem") {
+          // For poems (blue), adjust opacity and saturation
+          const r = 43;
+          const g = 140;
+          const b = 190;
+          return `rgba(${r}, ${g}, ${b}, ${intensity})`;
+        } else {
+          // For manuscripts (dark), create more dramatic variation
+          // Use a wider range from light gray to black for better differentiation
+          const minLightness = 220; // Light gray for low connections
+          const maxLightness = 34; // Dark gray/black for high connections
+          const lightness = Math.floor(
+            minLightness - (minLightness - maxLightness) * intensity
+          );
+          return `rgb(${lightness}, ${lightness}, ${lightness})`;
+        }
+      }
+
       const svgNS = "http://www.w3.org/2000/svg";
       const viz = document.getElementById("viz");
       const tooltip = document.getElementById("tip");
@@ -1122,20 +1181,63 @@
         centerShadow.setAttribute("fill", "rgba(0,0,0,0.1)");
         svg.appendChild(centerShadow);
 
-        const c = document.createElementNS(svgNS, "circle");
-        c.setAttribute("cx", cx);
-        c.setAttribute("cy", cy);
-        c.setAttribute("r", config.CENTER_R);
-        c.setAttribute("fill", COLORS[centerType]);
-        c.setAttribute("stroke", "#fff");
-        c.setAttribute("stroke-width", "3");
-        svg.appendChild(c);
-
         // Multi-line center label for long titles with connection count
         const centerConnections =
           centerType === "Poem"
             ? (POEM_TO_MSS[centerId] || []).length
             : (MS_TO_POEMS[centerId] || []).length;
+
+        // Calculate max connections for intensity scaling
+        const allConnectionCounts = ring1.map((n) =>
+          n.type === "Poem"
+            ? (POEM_TO_MSS[n.id] || []).length
+            : (MS_TO_POEMS[n.id] || []).length
+        );
+
+        // Separate max calculations for better scaling
+        const poemConnectionCounts = ring1
+          .filter((n) => n.type === "Poem")
+          .map((n) => (POEM_TO_MSS[n.id] || []).length);
+        const manuscriptConnectionCounts = ring1
+          .filter((n) => n.type === "Manuscript")
+          .map((n) => (MS_TO_POEMS[n.id] || []).length);
+
+        const maxPoemConnections =
+          poemConnectionCounts.length > 0
+            ? Math.max(
+                ...poemConnectionCounts,
+                centerType === "Poem" ? centerConnections : 0
+              )
+            : centerType === "Poem"
+            ? centerConnections
+            : 1;
+        const maxManuscriptConnections =
+          manuscriptConnectionCounts.length > 0
+            ? Math.max(
+                ...manuscriptConnectionCounts,
+                centerType === "Manuscript" ? centerConnections : 0
+              )
+            : centerType === "Manuscript"
+            ? centerConnections
+            : 1;
+
+        const c = document.createElementNS(svgNS, "circle");
+        c.setAttribute("cx", cx);
+        c.setAttribute("cy", cy);
+        c.setAttribute("r", config.CENTER_R);
+        c.setAttribute(
+          "fill",
+          getNodeColorSeparate(
+            centerType,
+            centerConnections,
+            maxPoemConnections,
+            maxManuscriptConnections
+          )
+        );
+        c.setAttribute("stroke", "#fff");
+        c.setAttribute("stroke-width", "3");
+        svg.appendChild(c);
+
         const centerTitle = `${centerId} [${centerConnections}]`;
         const lines = wrapText(centerTitle, 28);
         lines.forEach((line, i) => {
@@ -1159,6 +1261,12 @@
           g.style.cursor = "pointer";
           g.setAttribute("class", "node-group");
 
+          // Multi-line labels for long names with connection counts
+          const connections =
+            n.type === "Poem"
+              ? (POEM_TO_MSS[n.id] || []).length
+              : (MS_TO_POEMS[n.id] || []).length;
+
           // Node shadow
           const shadow = document.createElementNS(svgNS, "circle");
           shadow.setAttribute("cx", p.x + 1);
@@ -1171,7 +1279,15 @@
           circle.setAttribute("cx", p.x);
           circle.setAttribute("cy", p.y);
           circle.setAttribute("r", config.RING1_NODE_R);
-          circle.setAttribute("fill", COLORS[n.type]);
+          circle.setAttribute(
+            "fill",
+            getNodeColorSeparate(
+              n.type,
+              connections,
+              maxPoemConnections,
+              maxManuscriptConnections
+            )
+          );
           circle.setAttribute("stroke", "#fff");
           circle.setAttribute("stroke-width", "2");
           g.appendChild(circle);
@@ -1186,11 +1302,6 @@
           if (labelX < cx - 20) anchor = "end";
           else if (labelX > cx + 20) anchor = "start";
 
-          // Multi-line labels for long names with connection counts
-          const connections =
-            n.type === "Poem"
-              ? (POEM_TO_MSS[n.id] || []).length
-              : (MS_TO_POEMS[n.id] || []).length;
           const labelText = `${n.name} [${connections}]`;
           const lines = wrapText(labelText, 22);
           lines.forEach((line, i) => {
@@ -1262,11 +1373,20 @@
               shadow2.setAttribute("fill", "rgba(0,0,0,0.08)");
               g2.appendChild(shadow2);
 
+              const poemConnections = (POEM_TO_MSS[poemName] || []).length;
               const c2 = document.createElementNS(svgNS, "circle");
               c2.setAttribute("cx", x2);
               c2.setAttribute("cy", y2);
               c2.setAttribute("r", config.RING2_NODE_R);
-              c2.setAttribute("fill", COLORS.Poem);
+              c2.setAttribute(
+                "fill",
+                getNodeColorSeparate(
+                  "Poem",
+                  poemConnections,
+                  maxPoemConnections,
+                  maxManuscriptConnections
+                )
+              );
               c2.setAttribute("stroke", "#fff");
               c2.setAttribute("stroke-width", "1.5");
               g2.appendChild(c2);
