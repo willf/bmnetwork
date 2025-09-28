@@ -987,6 +987,28 @@
       sel.value = "Black maid complain not that I fly";
       manuscriptSel.value = "V.a.148.1";
 
+      // Function to update dropdown options with connection counts
+      function updateDropdownCounts() {
+        // Update poem dropdown with manuscript counts
+        Array.from(sel.options).forEach((option) => {
+          const poemTitle = option.value;
+          const manuscriptCount = (POEM_TO_MSS[poemTitle] || []).length;
+          const baseText = poemTitle;
+          option.textContent = `${baseText} [${manuscriptCount}]`;
+        });
+
+        // Update manuscript dropdown with poem counts
+        Array.from(manuscriptSel.options).forEach((option) => {
+          const manuscriptId = option.value;
+          const poemCount = (MS_TO_POEMS[manuscriptId] || []).length;
+          const baseText = manuscriptId;
+          option.textContent = `${baseText} [${poemCount}]`;
+        });
+      }
+
+      // Update counts on page load
+      updateDropdownCounts();
+
       // Global state tracking for resize handling
       let currentCenterId = "Black maid complain not that I fly";
       let currentCenterType = "Poem";
