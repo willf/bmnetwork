@@ -310,60 +310,7 @@
           on Poem:
         </label>
         <select id="poemSel" style="min-width: 380px; max-width: 60vw">
-          <option value="Why lovely boy why fliest thou me">
-            Why lovely boy why fliest thou me
-          </option>
-          <option value="Black maid complain not that I fly">
-            Black maid complain not that I fly
-          </option>
-          <option value="If shadows be a picture's excellence">
-            If shadows be a picture's excellence
-          </option>
-          <option value="I saw fair Chloris walk alone">
-            I saw fair Chloris walk alone
-          </option>
-          <option value="Black Cypress veils are shrouds of night">
-            Black Cypress veils are shrouds of night
-          </option>
-          <option value="Stand off and let me take the air">
-            Stand off and let me take the air
-          </option>
-          <option value="To the red man read thy read,">
-            To the red man read thy read,
-          </option>
-          <option value="From Julia's whiter hand a snowball came">
-            From Julia's whiter hand a snowball came
-          </option>
-          <option value="Grieve not (fair maid) 'cause you are black; so's she">
-            Grieve not (fair maid) 'cause you are black; so's she
-          </option>
-          <option value="Have you beheld the little sable beast">
-            Have you beheld the little sable beast
-          </option>
-          <option value="I can love both fair and brown,">
-            I can love both fair and brown,
-          </option>
-          <option value="Let it no longer be a forlorn hope">
-            Let it no longer be a forlorn hope
-          </option>
-          <option value="Matchless though black thou art, nature's sweet error">
-            Matchless though black thou art, nature's sweet error
-          </option>
-          <option value="My king turned Ethiopian with the rays">
-            My king turned Ethiopian with the rays
-          </option>
-          <option value="Now black-brow'd night plac't in her chair of jet">
-            Now black-brow'd night plac't in her chair of jet
-          </option>
-          <option value="The present's black and light as a feather">
-            The present's black and light as a feather
-          </option>
-          <option value="Thou'rt fair and black thy brows as black as jet">
-            Thou'rt fair and black thy brows as black as jet
-          </option>
-          <option value="Under this marble lies entomb'd a More">
-            Under this marble lies entomb'd a More
-          </option>
+          <!-- Options will be populated dynamically -->
         </select>
         <label>
           <input type="radio" name="centerMode" value="manuscript" /> Center on
@@ -374,57 +321,7 @@
           style="min-width: 380px; max-width: 60vw"
           disabled
         >
-          <option value="Add. 11811">Add. 11811</option>
-          <option value="Add. 15227">Add. 15227</option>
-          <option value="Add. 19268">Add. 19268</option>
-          <option value="Add. 22118">Add. 22118</option>
-          <option value="Add. 22582">Add. 22582</option>
-          <option value="Add. 30982">Add. 30982</option>
-          <option value="Add. 44963">Add. 44963</option>
-          <option value="Add. 62134">Add. 62134</option>
-          <option value="Ashmole 47">Ashmole 47</option>
-          <option value="Corpus Christi 328">Corpus Christi 328</option>
-          <option value="Eng. misc. e. 13">Eng. misc. e. 13</option>
-          <option value="Eng. poet. e. 30">Eng. poet. e. 30</option>
-          <option value="Eng. poet. f. 16">Eng. poet. f. 16</option>
-          <option value="Eng. poet. f. 16 (attr. Donne)">
-            Eng. poet. f. 16 (attr. Donne)
-          </option>
-          <option value="G1401B">G1401B</option>
-          <option value="HM116">HM116</option>
-          <option value="Harley 3511">Harley 3511</option>
-          <option value="Harley 6931">Harley 6931</option>
-          <option value="K0501">K0501</option>
-          <option value="L0643">L0643</option>
-          <option value="Lansdowne 777">Lansdowne 777</option>
-          <option value="MS 240/7">MS 240/7</option>
-          <option value="MS Eng 703">MS Eng 703</option>
-          <option value="Malone 21">Malone 21</option>
-          <option value="Rawl. D. 1092">Rawl. D. 1092</option>
-          <option value="Rawl. D. 1092 (attr. Strode)">
-            Rawl. D. 1092 (attr. Strode)
-          </option>
-          <option value="Rawl. poet. 116">Rawl. poet. 116</option>
-          <option value="Rawl. poet. 199">Rawl. poet. 199</option>
-          <option value="Rawl. poet. 84">Rawl. poet. 84</option>
-          <option value="Sloane 1446">Sloane 1446</option>
-          <option value="Sloane 1792">Sloane 1792</option>
-          <option value="Sloane 542">Sloane 542</option>
-          <option value="V.a.124">V.a.124</option>
-          <option value="V.a.148.1">V.a.148.1</option>
-          <option value="V.a.170">V.a.170</option>
-          <option value="V.a.319">V.a.319</option>
-          <option value="V.a.319 (back of ms.)">V.a.319 (back of ms.)</option>
-          <option value="V.a.319 (back of MS)">V.a.319 (back of MS)</option>
-          <option value="V.a.322">V.a.322</option>
-          <option value="V.a.339">V.a.339</option>
-          <option value="V.a.97">V.a.97</option>
-          <option value="V.b.110">V.b.110</option>
-          <option value="V.b.43">V.b.43</option>
-          <option value="W3686">W3686</option>
-          <option value="b.200">b.200</option>
-          <option value="b.205">b.205</option>
-          <option value="b.62">b.62</option>
+          <!-- Options will be populated dynamically -->
         </select>
       </div>
       <button id="goBtn">Go</button>
@@ -987,31 +884,64 @@
       sel.value = "Black maid complain not that I fly";
       manuscriptSel.value = "V.a.148.1";
 
-      // Function to update dropdown options with connection counts
-      function updateDropdownCounts() {
-        // Update poem dropdown with manuscript counts
-        Array.from(sel.options).forEach((option) => {
-          const poemTitle = option.value;
-          const manuscriptCount = (POEM_TO_MSS[poemTitle] || []).length;
-          const baseText = poemTitle;
-          option.textContent = `${baseText} [${manuscriptCount}]`;
-        });
-
-        // Update manuscript dropdown with poem counts
-        Array.from(manuscriptSel.options).forEach((option) => {
-          const manuscriptId = option.value;
-          const poemCount = (MS_TO_POEMS[manuscriptId] || []).length;
-          const baseText = manuscriptId;
-          option.textContent = `${baseText} [${poemCount}]`;
-        });
-      }
-
-      // Update counts on page load
-      updateDropdownCounts();
-
       // Global state tracking for resize handling
       let currentCenterId = "Black maid complain not that I fly";
       let currentCenterType = "Poem";
+
+      // Function to populate dropdown options dynamically
+      function populateDropdowns() {
+        // Clear existing options
+        sel.innerHTML = "";
+        manuscriptSel.innerHTML = "";
+
+        // Populate poem dropdown - sorted by connection count (descending)
+        const poems = Object.keys(POEM_TO_MSS)
+          .map((poem) => ({
+            title: poem,
+            count: (POEM_TO_MSS[poem] || []).length,
+          }))
+          .sort((a, b) => b.count - a.count);
+
+        poems.forEach((poem) => {
+          const option = document.createElement("option");
+          option.value = poem.title;
+          option.textContent = `${poem.title} [${poem.count}]`;
+          sel.appendChild(option);
+        });
+
+        // Populate manuscript dropdown - sorted by connection count (descending)
+        const manuscripts = Object.keys(MS_TO_POEMS)
+          .map((ms) => ({
+            id: ms,
+            count: (MS_TO_POEMS[ms] || []).length,
+          }))
+          .sort((a, b) => b.count - a.count);
+
+        manuscripts.forEach((ms) => {
+          const option = document.createElement("option");
+          option.value = ms.id;
+          option.textContent = `${ms.id} [${ms.count}]`;
+          manuscriptSel.appendChild(option);
+        });
+
+        // Set default selections to highest connected items
+        if (poems.length > 0) {
+          sel.value = poems[0].title;
+          currentCenterId = poems[0].title;
+        }
+        if (manuscripts.length > 0) {
+          manuscriptSel.value = manuscripts[0].id;
+        }
+      }
+
+      // Function to update dropdown options with connection counts (keeping for compatibility)
+      function updateDropdownCounts() {
+        // This function is now replaced by populateDropdowns() but keeping for any legacy calls
+        populateDropdowns();
+      }
+
+      // Populate dropdowns on page load
+      populateDropdowns();
 
       // Set up resize handler immediately
       let resizeTimeout;
@@ -1092,7 +1022,9 @@
         } else {
           nodeCountEl.textContent = `${count} of ${totalAvailable} ${connectionType}`;
         }
-      } // Adaptive sizing constants
+      }
+
+      // Adaptive sizing constants
       function getLayoutConfig(nodeCount, width, height) {
         const minDim = Math.min(width, height);
         const density = nodeCount / 20; // Base density factor
@@ -1100,18 +1032,10 @@
 
         return {
           RING1_NODE_R: Math.max(12, 20 - density * 2), // Increased from 10,16 - bigger outer nodes
-          RING2_NODE_R: Math.max(6, 10 - density),
           CENTER_R: Math.max(32, 45 - density * 3),
           LABEL_FONT: Math.max(11, 16 - density * 1.5),
-          RING2_LABEL_FONT: Math.max(9, 12 - density),
           LABEL_OFFSET: Math.max(20, 28 - density * 2),
           R1: minDim * Math.max(0.25, 0.32 - density * 0.02), // Much tighter, adaptive
-          R2_MULT: Math.max(1.12, 1.25 - density * 0.03), // Closer second ring
-          RING2_SPREAD: Math.max(0.02, 0.035 - density * 0.003),
-          PER_MS_CHILD_CAP:
-            maxNodes === 999
-              ? 999999
-              : Math.min(maxNodes, Math.max(3, 15 - Math.floor(density * 2))),
         };
       }
 
@@ -1119,6 +1043,10 @@
         // Update global state
         currentCenterId = centerId;
         currentCenterType = centerType;
+
+        console.log(
+          `Drawing with centerId: "${centerId}", centerType: "${centerType}"`
+        );
 
         viz.innerHTML = "";
 
@@ -1168,10 +1096,9 @@
         // Get adaptive layout configuration
         const config = getLayoutConfig(count1, width, height);
         const R1 = config.R1;
-        const R2 = R1 * config.R2_MULT;
 
         // Recalculate cy with actual configuration to minimize top space
-        const maxRadius = R2 + config.RING1_NODE_R + 50; // R2 radius plus node size plus label space
+        const maxRadius = R1 + config.RING1_NODE_R + 50; // R1 radius plus node size plus label space
         const optimalCy = Math.max(maxRadius + 5, height * 0.3); // 5px from top, positioned higher
         const cy = Math.min(optimalCy, height / 2); // Don't go lower than center if space is tight
 
@@ -1357,90 +1284,6 @@
 
           svg.appendChild(g);
         });
-
-        if (centerType === "Poem") {
-          ring1.forEach((msNode) => {
-            const p = positions1.get(msNode.id);
-            const siblings = (MS_TO_POEMS[msNode.id] || []).filter(
-              (q) => q !== centerId
-            );
-            const limited = siblings.slice(0, config.PER_MS_CHILD_CAP);
-            const n2 = limited.length;
-            if (!n2) return;
-            const base = p.angle;
-            const start = base - ((n2 - 1) * config.RING2_SPREAD) / 2;
-
-            limited.forEach((poemName, k) => {
-              const angle = start + k * RING2_SPREAD;
-              const x2 = cx + R2 * Math.cos(angle);
-              const y2 = cy + R2 * Math.sin(angle);
-
-              const link = document.createElementNS(svgNS, "line");
-              link.setAttribute("x1", p.x);
-              link.setAttribute("y1", p.y);
-              link.setAttribute("x2", x2);
-              link.setAttribute("y2", y2);
-              link.setAttribute("stroke", "#aaa");
-              link.setAttribute("stroke-opacity", "0.4");
-              svg.appendChild(link);
-
-              const g2 = document.createElementNS(svgNS, "g");
-              g2.style.cursor = "pointer";
-
-              // Ring2 shadow
-              const shadow2 = document.createElementNS(svgNS, "circle");
-              shadow2.setAttribute("cx", x2 + 0.5);
-              shadow2.setAttribute("cy", y2 + 0.5);
-              shadow2.setAttribute("r", config.RING2_NODE_R);
-              shadow2.setAttribute("fill", "rgba(0,0,0,0.08)");
-              g2.appendChild(shadow2);
-
-              const poemConnections = (POEM_TO_MSS[poemName] || []).length;
-              const c2 = document.createElementNS(svgNS, "circle");
-              c2.setAttribute("cx", x2);
-              c2.setAttribute("cy", y2);
-              c2.setAttribute("r", config.RING2_NODE_R);
-              c2.setAttribute(
-                "fill",
-                getNodeColorSeparate(
-                  "Poem",
-                  poemConnections,
-                  maxPoemConnections,
-                  maxManuscriptConnections
-                )
-              );
-              c2.setAttribute("stroke", "#fff");
-              c2.setAttribute("stroke-width", "1.5");
-              g2.appendChild(c2);
-
-              const t2 = document.createElementNS(svgNS, "text");
-              t2.setAttribute("x", x2);
-              t2.setAttribute("y", y2 + config.RING2_NODE_R + 10);
-              t2.setAttribute("text-anchor", "middle");
-              t2.setAttribute("font-size", config.RING2_LABEL_FONT);
-              t2.setAttribute("fill", "#666");
-              t2.textContent =
-                poemName.length > 25
-                  ? poemName.substring(0, 22) + "..."
-                  : poemName;
-              g2.appendChild(t2);
-
-              const nodeInfo = { id: poemName, type: "Poem", name: poemName };
-              g2.addEventListener("mouseenter", (ev) => {
-                showTip(ev, nodeInfo);
-                c2.setAttribute("r", config.RING2_NODE_R + 1);
-              });
-              g2.addEventListener("mousemove", (ev) => moveTip(ev));
-              g2.addEventListener("mouseleave", () => {
-                hideTip();
-                c2.setAttribute("r", config.RING2_NODE_R);
-              });
-              g2.addEventListener("click", () => drawTwo(poemName, "Poem"));
-
-              svg.appendChild(g2);
-            });
-          });
-        }
       }
 
       btn.addEventListener("click", () => {
