@@ -20,6 +20,8 @@
           "Times New Roman", "Book Antiqua", serif;
         font-feature-settings: "liga" 1, "dlig" 1, "kern" 1;
         text-rendering: optimizeLegibility;
+        display: flex;
+        flex-direction: column;
       }
       header {
         display: flex;
@@ -32,12 +34,15 @@
       }
       #viz {
         width: 100%;
-        height: calc(100vh - 180px); /* Reduced from 200px to 180px */
+        height: calc(100vh - 230px); /* Account for header and footer */
         background: radial-gradient(
           ellipse at center,
           #f8f9fa 0%,
           #ffffff 100%
         );
+        flex: 1;
+        overflow: hidden;
+        position: relative;
       }
       select,
       button {
@@ -230,6 +235,37 @@
         border-bottom-color: rgba(255, 255, 255, 0.8);
         text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
       }
+      /* Footer styling */
+      footer {
+        background: #f8f9fa;
+        border-top: 1px solid #eee;
+        padding: 16px 20px;
+        text-align: center;
+        font-size: 14px;
+        color: #666;
+        margin-top: auto;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 1000;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      footer .footer-content {
+        max-width: 900px;
+        margin: 0 auto;
+      }
+      footer p {
+        margin: 0;
+        font-family: "Crimson Text", serif;
+        letter-spacing: 0.2px;
+      }
+      footer a {
+        color: #2b8cbe;
+        font-weight: 500;
+      }
+      footer a:hover {
+        color: #1a6b8f;
+      }
     </style>
   </head>
   <body>
@@ -411,6 +447,15 @@
     </header>
     <div id="viz"></div>
     <div id="tip" class="tooltip"></div>
+
+    <footer>
+      <div class="footer-content">
+        <p>
+          Analysis by <a href="#">Thomas Ward</a> • Visualization by
+          <a href="https://github.com/willf">Will Fitzgerald</a> Made with ❤️.
+        </p>
+      </div>
+    </footer>
 
     <script>
       const POEM_TO_MSS = {
@@ -991,7 +1036,7 @@
 
         // Use window dimensions directly for reliable resize handling
         const width = window.innerWidth;
-        const height = window.innerHeight - 180;
+        const height = window.innerHeight - 230; // Account for header and footer
 
         const cx = width / 2;
         // cy will be calculated after we know the actual layout configuration
