@@ -945,34 +945,18 @@
 
       // Set up resize handler immediately
       let resizeTimeout;
-      console.log("Setting up resize handler...");
       window.addEventListener(
         "resize",
         function (e) {
-          console.log(
-            "Resize event detected!",
-            window.innerWidth,
-            window.innerHeight
-          );
           clearTimeout(resizeTimeout);
           resizeTimeout = setTimeout(() => {
-            console.log(
-              "Redrawing after resize with:",
-              currentCenterId,
-              currentCenterType
-            );
             if (typeof drawTwo === "function") {
               drawTwo(currentCenterId, currentCenterType);
-            } else {
-              console.log("drawTwo function not available yet");
             }
           }, 50);
         },
         true
       ); // Use capture phase
-
-      // Test that the handler is working
-      console.log("Resize handler added. Try resizing the window.");
 
       // Hero toggle functionality
       function toggleHero() {
@@ -1043,10 +1027,6 @@
         // Update global state
         currentCenterId = centerId;
         currentCenterType = centerType;
-
-        console.log(
-          `Drawing with centerId: "${centerId}", centerType: "${centerType}"`
-        );
 
         viz.innerHTML = "";
 
