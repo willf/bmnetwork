@@ -266,6 +266,13 @@
       footer a:hover {
         color: #1a6b8f;
       }
+      /* Connection count styling */
+      .connection-count {
+        font-weight: 600;
+        font-size: 0.9em;
+        color: #666;
+        opacity: 0.8;
+      }
     </style>
   </head>
   <body>
@@ -1124,8 +1131,13 @@
         c.setAttribute("stroke-width", "3");
         svg.appendChild(c);
 
-        // Multi-line center label for long titles
-        const lines = wrapText(centerId, 25);
+        // Multi-line center label for long titles with connection count
+        const centerConnections =
+          centerType === "Poem"
+            ? (POEM_TO_MSS[centerId] || []).length
+            : (MS_TO_POEMS[centerId] || []).length;
+        const centerTitle = `${centerId} [${centerConnections}]`;
+        const lines = wrapText(centerTitle, 28);
         lines.forEach((line, i) => {
           const cLabel = document.createElementNS(svgNS, "text");
           cLabel.setAttribute("x", cx);
@@ -1174,8 +1186,13 @@
           if (labelX < cx - 20) anchor = "end";
           else if (labelX > cx + 20) anchor = "start";
 
-          // Multi-line labels for long names
-          const lines = wrapText(n.name, 20);
+          // Multi-line labels for long names with connection counts
+          const connections =
+            n.type === "Poem"
+              ? (POEM_TO_MSS[n.id] || []).length
+              : (MS_TO_POEMS[n.id] || []).length;
+          const labelText = `${n.name} [${connections}]`;
+          const lines = wrapText(labelText, 22);
           lines.forEach((line, i) => {
             const label = document.createElementNS(svgNS, "text");
             label.setAttribute("x", labelX);
