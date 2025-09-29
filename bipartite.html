@@ -1030,7 +1030,7 @@
         }
 
         // Node circle with shadow
-        const nodeRadius = nodeType === "Poem" ? 24 : 8; // Poems: 48px diameter (2x font height), Manuscripts: 16px
+        const nodeRadius = nodeType === "Poem" ? 18 : 10; // Poems: 36px diameter, Manuscripts: 20px diameter (increased from 16px)
         const shadow = document.createElementNS(svgNS, "circle");
         shadow.setAttribute("cx", position.x + 1);
         shadow.setAttribute("cy", position.y + 1);
