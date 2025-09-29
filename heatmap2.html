@@ -295,7 +295,7 @@
         text-anchor: end;
         font-weight: 600;
       }
-      .manuscript-label {
+      .source-label {
         text-anchor: start;
         font-weight: 500;
       }
@@ -371,19 +371,18 @@
         <h1>Tracing Race in the Archive</h1>
         <h2>Poem Similarity Heatmap</h2>
         <p>
-          This heatmap shows the similarity between poems based on shared
-          manuscript appearances. Each cell represents the percentage of
-          manuscripts that two poems have in common. Darker blue indicates
-          higher manuscript overlap, revealing clusters of poems that frequently
-          appear together in the same sources.
+          This heatmap shows the similarity between poems based on shared source
+          appearances. Each cell represents the percentage of sources that two
+          poems have in common. Darker blue indicates higher source overlap,
+          revealing clusters of poems that frequently appear together in the
+          same sources.
         </p>
         <p>
           The diagonal shows each poem compared to itself (100% similarity).
           Off-diagonal patterns reveal poem relationships - dense blue regions
-          indicate groups of poems that share many manuscripts, suggesting
-          thematic, authorial, or temporal connections. This view helps identify
-          which poems have similar transmission patterns through the manuscript
-          tradition.
+          indicate groups of poems that share many sources, suggesting thematic,
+          authorial, or temporal connections. This view helps identify which
+          poems have similar transmission patterns through the source tradition.
         </p>
       </div>
     </section>
@@ -411,8 +410,8 @@
         <div class="control-group">
           <label for="matrixDisplay">Matrix display:</label>
           <select id="matrixDisplay">
-            <option value="upper" selected>Upper diagonal</option>
-            <option value="lower">Lower diagonal</option>
+            <option value="upper">Upper diagonal</option>
+            <option value="lower" selected>Lower diagonal</option>
             <option value="full">Full matrix</option>
           </select>
         </div>
@@ -470,7 +469,7 @@
       <div class="heatmap-container">
         <div class="matrix-stats" id="matrixStats"></div>
         <div class="color-scale">
-          <span class="scale-title">Manuscript overlap percentage:</span>
+          <span class="scale-title">source overlap percentage:</span>
           <div>
             <div class="scale-bar"></div>
             <div class="scale-labels">
@@ -668,7 +667,7 @@
       let similarityMatrix = [];
       let currentSort = "clustering";
       let currentThreshold = 20;
-      let currentMatrixDisplay = "upper";
+      let currentMatrixDisplay = "lower";
 
       // Initialize the heatmap
       function initializeHeatmap() {
@@ -857,7 +856,7 @@
           );
           text.setAttribute("x", labelWidth + i * cellSize + cellSize / 2);
           text.setAttribute("y", labelHeight - 25);
-          text.setAttribute("class", "heatmap-labels manuscript-label");
+          text.setAttribute("class", "heatmap-labels source-label");
           text.setAttribute("text-anchor", "start");
           text.setAttribute(
             "transform",
@@ -952,21 +951,21 @@
           tooltip.innerHTML = `
             <strong>Same poem</strong><br>
             ${truncateText(poem1, 40)}<br>
-            Manuscripts: ${POEM_TO_MSS[poem1].length}
+            sources: ${POEM_TO_MSS[poem1].length}
           `;
         } else {
           const sharedMss = POEM_TO_MSS[poem1].filter((ms) =>
             POEM_TO_MSS[poem2].includes(ms)
           );
           tooltip.innerHTML = `
-            <strong>${similarity}% manuscript overlap</strong><br>
+            <strong>${similarity}% source overlap</strong><br>
             Poem 1: ${truncateText(poem1, 30)} (${
             POEM_TO_MSS[poem1].length
           } mss)<br>
             Poem 2: ${truncateText(poem2, 30)} (${
             POEM_TO_MSS[poem2].length
           } mss)<br>
-            Shared manuscripts: ${sharedMss.length}
+            Shared sources: ${sharedMss.length}
           `;
         }
 

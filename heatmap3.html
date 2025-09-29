@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Tracing Race in the Archive - Manuscript Similarity Heatmap</title>
+    <title>Tracing Race in the Archive - source Similarity Heatmap</title>
     <!-- Renaissance-inspired typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -291,11 +291,11 @@
         fill: #333;
         font-weight: 500;
       }
-      .manuscript-label {
+      .source-label {
         text-anchor: end;
         font-weight: 600;
       }
-      .manuscript-label-x {
+      .source-label-x {
         text-anchor: start;
         font-weight: 500;
       }
@@ -369,20 +369,19 @@
       </button>
       <div class="hero-content">
         <h1>Tracing Race in the Archive</h1>
-        <h2>Manuscript Similarity Heatmap</h2>
+        <h2>source Similarity Heatmap</h2>
         <p>
-          This heatmap shows the similarity between manuscripts based on shared
-          poem content. Each cell represents the percentage of poems that two
-          manuscripts have in common. Darker blue indicates higher poem overlap,
-          revealing manuscripts that contain similar collections of poems.
+          This heatmap shows the similarity between sources based on shared poem
+          content. Each cell represents the percentage of poems that two sources
+          have in common. Darker blue indicates higher poem overlap, revealing
+          sources that contain similar collections of poems.
         </p>
         <p>
-          The diagonal shows each manuscript compared to itself (100%
-          similarity). Off-diagonal patterns reveal manuscript relationships -
-          dense blue regions indicate groups of manuscripts that share many
-          poems, suggesting common sources, scribal traditions, or thematic
-          collections. This view helps identify manuscript families and
-          transmission patterns in the archive.
+          The diagonal shows each source compared to itself (100% similarity).
+          Off-diagonal patterns reveal source relationships - dense blue regions
+          indicate groups of sources that share many poems, suggesting common
+          sources, scribal traditions, or thematic collections. This view helps
+          identify source families and transmission patterns in the archive.
         </p>
       </div>
     </section>
@@ -390,8 +389,8 @@
     <header>
       <div class="controls">
         <div class="control-group">
-          <label for="sortManuscripts">Sort manuscripts by:</label>
-          <select id="sortManuscripts">
+          <label for="sortsources">Sort sources by:</label>
+          <select id="sortsources">
             <option value="alphabetical">Alphabetical</option>
             <option value="connections">Poem count</option>
             <option value="clustering" selected>Clustering</option>
@@ -410,8 +409,8 @@
         <div class="control-group">
           <label for="matrixDisplay">Matrix display:</label>
           <select id="matrixDisplay">
-            <option value="upper" selected>Upper diagonal</option>
-            <option value="lower">Lower diagonal</option>
+            <option value="upper">Upper diagonal</option>
+            <option value="lower" selected>Lower diagonal</option>
             <option value="full">Full matrix</option>
           </select>
         </div>
@@ -662,10 +661,10 @@
         "Under this marble lies entomb'd a More": ["Add. 15227"],
       };
 
-      // Create manuscript to poems mapping
+      // Create source to poems mapping
       const MS_TO_POEMS = {};
-      Object.entries(POEM_TO_MSS).forEach(([poem, manuscripts]) => {
-        manuscripts.forEach((ms) => {
+      Object.entries(POEM_TO_MSS).forEach(([poem, sources]) => {
+        sources.forEach((ms) => {
           if (!MS_TO_POEMS[ms]) {
             MS_TO_POEMS[ms] = [];
           }
@@ -674,11 +673,11 @@
       });
 
       // Global variables
-      let manuscripts = [];
+      let sources = [];
       let similarityMatrix = [];
       let currentSort = "clustering";
       let currentThreshold = 20;
-      let currentMatrixDisplay = "upper";
+      let currentMatrixDisplay = "lower";
 
       // Initialize the heatmap
       function initializeHeatmap() {
@@ -688,20 +687,20 @@
       }
 
       function prepareData() {
-        // Get all manuscripts
-        manuscripts = Object.keys(MS_TO_POEMS);
+        // Get all sources
+        sources = Object.keys(MS_TO_POEMS);
 
         // Sort based on current settings
         sortData();
 
         // Create similarity matrix
-        similarityMatrix = manuscripts.map((ms1) =>
-          manuscripts.map((ms2) => calculateSimilarity(ms1, ms2))
+        similarityMatrix = sources.map((ms1) =>
+          sources.map((ms2) => calculateSimilarity(ms1, ms2))
         );
       }
 
       function calculateSimilarity(ms1, ms2) {
-        if (ms1 === ms2) return 100; // Same manuscript = 100% similarity
+        if (ms1 === ms2) return 100; // Same source = 100% similarity
 
         const poems1 = new Set(MS_TO_POEMS[ms1] || []);
         const poems2 = new Set(MS_TO_POEMS[ms2] || []);
@@ -716,8 +715,8 @@
       }
 
       function sortData() {
-        // Sort manuscripts
-        manuscripts.sort((a, b) => {
+        // Sort sources
+        sources.sort((a, b) => {
           switch (currentSort) {
             case "connections":
               const aCount = MS_TO_POEMS[a] ? MS_TO_POEMS[a].length : 0;
@@ -731,15 +730,15 @@
         });
       }
 
-      function calculateClusteringScore(manuscript) {
-        // Calculate average similarity with all other manuscripts
-        const msPoemsSet = new Set(MS_TO_POEMS[manuscript] || []);
+      function calculateClusteringScore(source) {
+        // Calculate average similarity with all other sources
+        const msPoemsSet = new Set(MS_TO_POEMS[source] || []);
         let totalSimilarity = 0;
         let count = 0;
 
-        manuscripts.forEach((otherMs) => {
-          if (otherMs !== manuscript) {
-            totalSimilarity += calculateSimilarity(manuscript, otherMs);
+        sources.forEach((otherMs) => {
+          if (otherMs !== source) {
+            totalSimilarity += calculateSimilarity(source, otherMs);
             count++;
           }
         });
@@ -748,7 +747,7 @@
       }
 
       function calculateStatistics() {
-        const totalCells = manuscripts.length * manuscripts.length;
+        const totalCells = sources.length * sources.length;
         const similarities = similarityMatrix
           .flat()
           .filter((sim) => sim > 0 && sim < 100); // Exclude self-similarities
@@ -771,36 +770,34 @@
           (sim) => sim > 0 && sim < 20
         ).length;
 
-        // Find most similar manuscript pair
+        // Find most similar source pair
         let maxSim = 0;
         let mostSimilarPair = ["", ""];
-        for (let i = 0; i < manuscripts.length; i++) {
-          for (let j = i + 1; j < manuscripts.length; j++) {
+        for (let i = 0; i < sources.length; i++) {
+          for (let j = i + 1; j < sources.length; j++) {
             if (similarityMatrix[i][j] > maxSim) {
               maxSim = similarityMatrix[i][j];
-              mostSimilarPair = [manuscripts[i], manuscripts[j]];
+              mostSimilarPair = [sources[i], sources[j]];
             }
           }
         }
 
-        // Calculate manuscript stats
-        const manuscriptCounts = manuscripts.map((ms) =>
+        // Calculate source stats
+        const sourceCounts = sources.map((ms) =>
           MS_TO_POEMS[ms] ? MS_TO_POEMS[ms].length : 0
         );
-        const avgManuscriptPoems = (
-          manuscriptCounts.reduce((sum, val) => sum + val, 0) /
-          manuscripts.length
+        const avgsourcePoems = (
+          sourceCounts.reduce((sum, val) => sum + val, 0) / sources.length
         ).toFixed(1);
-        const maxPoems = Math.max(...manuscriptCounts);
-        const richestManuscript =
-          manuscripts[manuscriptCounts.indexOf(maxPoems)];
+        const maxPoems = Math.max(...sourceCounts);
+        const richestsource = sources[sourceCounts.indexOf(maxPoems)];
 
         const statsHtml = `
           <div class="stats-grid">
             <div class="stat-item">
               <span>Matrix size:</span>
-              <span class="stat-value">${manuscripts.length} × ${
-          manuscripts.length
+              <span class="stat-value">${sources.length} × ${
+          sources.length
         }</span>
             </div>
             <div class="stat-item">
@@ -824,12 +821,12 @@
               <span class="stat-value">${lowSimilarity} pairs</span>
             </div>
             <div class="stat-item">
-              <span>Avg. poems per manuscript:</span>
-              <span class="stat-value">${avgManuscriptPoems}</span>
+              <span>Avg. poems per source:</span>
+              <span class="stat-value">${avgsourcePoems}</span>
             </div>
             <div class="stat-item">
-              <span>Richest manuscript:</span>
-              <span class="stat-value">${richestManuscript} (${maxPoems} poems)</span>
+              <span>Richest source:</span>
+              <span class="stat-value">${richestsource} (${maxPoems} poems)</span>
             </div>
             <div class="stat-item">
               <span>Most similar pair:</span>
@@ -848,15 +845,15 @@
         const container = document.getElementById("heatmapMatrix");
         container.innerHTML = "";
 
-        console.log("Drawing heatmap with", manuscripts.length, "manuscripts");
+        console.log("Drawing heatmap with", sources.length, "sources");
         console.log("Current matrix display:", currentMatrixDisplay);
 
         // Create SVG
         const cellSize = 25;
         const labelWidth = 200;
         const labelHeight = 120;
-        const width = labelWidth + manuscripts.length * cellSize + 50;
-        const height = labelHeight + manuscripts.length * cellSize + 50;
+        const width = labelWidth + sources.length * cellSize + 50;
+        const height = labelHeight + sources.length * cellSize + 50;
 
         const svg = document.createElementNS(
           "http://www.w3.org/2000/svg",
@@ -867,31 +864,31 @@
         svg.style.background = "white";
         container.appendChild(svg);
 
-        // Draw manuscript labels (Y-axis)
-        manuscripts.forEach((manuscript, i) => {
+        // Draw source labels (Y-axis)
+        sources.forEach((source, i) => {
           const text = document.createElementNS(
             "http://www.w3.org/2000/svg",
             "text"
           );
           text.setAttribute("x", labelWidth - 10);
           text.setAttribute("y", labelHeight + i * cellSize + cellSize / 2);
-          text.setAttribute("class", "heatmap-labels manuscript-label");
+          text.setAttribute("class", "heatmap-labels source-label");
           text.setAttribute("text-anchor", "end");
           text.setAttribute("dominant-baseline", "middle");
           text.setAttribute("font-size", "12");
-          text.textContent = truncateText(manuscript, 25);
+          text.textContent = truncateText(source, 25);
           svg.appendChild(text);
         });
 
-        // Draw manuscript labels (X-axis) - rotated
-        manuscripts.forEach((manuscript, i) => {
+        // Draw source labels (X-axis) - rotated
+        sources.forEach((source, i) => {
           const text = document.createElementNS(
             "http://www.w3.org/2000/svg",
             "text"
           );
           text.setAttribute("x", labelWidth + i * cellSize + cellSize / 2);
           text.setAttribute("y", labelHeight - 25);
-          text.setAttribute("class", "heatmap-labels manuscript-label-x");
+          text.setAttribute("class", "heatmap-labels source-label-x");
           text.setAttribute("text-anchor", "start");
           text.setAttribute(
             "transform",
@@ -900,13 +897,13 @@
             })`
           );
           text.setAttribute("font-size", "11");
-          text.textContent = truncateText(manuscript, 20);
+          text.textContent = truncateText(source, 20);
           svg.appendChild(text);
         });
 
         // Draw matrix cells (based on display mode)
-        manuscripts.forEach((ms1, i) => {
-          manuscripts.forEach((ms2, j) => {
+        sources.forEach((ms1, i) => {
+          sources.forEach((ms2, j) => {
             // Filter based on matrix display mode
             let shouldDraw = true;
             if (currentMatrixDisplay === "upper" && (j < i || i === j)) {
@@ -980,7 +977,7 @@
         if (ms1 === ms2) {
           const poemCount = MS_TO_POEMS[ms1] ? MS_TO_POEMS[ms1].length : 0;
           tooltip.innerHTML = `
-            <strong>Same manuscript</strong><br>
+            <strong>Same source</strong><br>
             ${truncateText(ms1, 30)}<br>
             Poems: ${poemCount}
           `;
@@ -1026,7 +1023,7 @@
 
       // Control handlers
       function updateSorting() {
-        currentSort = document.getElementById("sortManuscripts").value;
+        currentSort = document.getElementById("sortsources").value;
         initializeHeatmap();
       }
 
@@ -1053,7 +1050,7 @@
           ctx.drawImage(img, 0, 0);
 
           const link = document.createElement("a");
-          link.download = "manuscript-similarity-heatmap.png";
+          link.download = "source-similarity-heatmap.png";
           link.href = canvas.toDataURL();
           link.click();
         };
@@ -1082,7 +1079,7 @@
 
       // Event listeners
       document
-        .getElementById("sortManuscripts")
+        .getElementById("sortsources")
         .addEventListener("change", updateSorting);
       document
         .getElementById("threshold")

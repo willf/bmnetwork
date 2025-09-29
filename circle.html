@@ -297,10 +297,10 @@
         <h1>Tracing Race in the Archive</h1>
         <p>
           “Tracing Race in the Archive” maps interconnections among poems
-          relating to race as they circulated in manuscript and print in the
+          relating to race as they circulated in source and print in the
           seventeenth century. Drawing on data from the
           <a href="https://celm.folger.edu/"
-            >Catalogue of English Literary Manuscripts</a
+            >Catalogue of English Literary sources</a
           >
           and the
           <a href="https://firstlines.folger.edu/search.php"
@@ -338,10 +338,10 @@
 
         <p>
           Each turquoise node on the map represents a poem; each black node
-          represents a manuscript or print source in which that poem can be
-          found. Higher color saturation indicates a larger number of sources or
-          poems connected to a given node. Poems are labeled according to their
-          first lines as they appear most commonly in early modern sources (with
+          represents a source or print source in which that poem can be found.
+          Higher color saturation indicates a larger number of sources or poems
+          connected to a given node. Poems are labeled according to their first
+          lines as they appear most commonly in early modern sources (with
           Rainolds’s poem appearing as “Why lovely boy why fliest thou me”);
           sources are labeled according to their library shelf-mark, which can
           be keyed to the full bibliographic information listed below, which
@@ -501,11 +501,11 @@
           <!-- Options will be populated dynamically -->
         </select>
         <label>
-          <input type="radio" name="centerMode" value="manuscript" /> Center on
-          Manuscript:
+          <input type="radio" name="centerMode" value="source" /> Center on
+          source:
         </label>
         <select
-          id="manuscriptSel"
+          id="sourceSel"
           style="min-width: 380px; max-width: 60vw"
           disabled
         >
@@ -529,8 +529,7 @@
           ><span class="swatch" style="background: #2b8cbe"></span> Poem</span
         >
         <span class="key"
-          ><span class="swatch" style="background: #222"></span>
-          Manuscript</span
+          ><span class="swatch" style="background: #222"></span> source</span
         >
         <span style="margin-left: 8px; color: #666"
           >(Click any outer node to re-center)</span
@@ -957,7 +956,7 @@
         ],
       };
 
-      const COLORS = { Poem: "#2b8cbe", Manuscript: "#222" };
+      const COLORS = { Poem: "#2b8cbe", source: "#222" };
 
       // Function to calculate color intensity based on connection count
       function getNodeColor(nodeType, connectionCount, maxConnections) {
@@ -974,7 +973,7 @@
           const b = 190;
           return `rgba(${r}, ${g}, ${b}, ${intensity})`;
         } else {
-          // For manuscripts (dark), create more dramatic variation
+          // For sources (dark), create more dramatic variation
           // Use a wider range from light gray to black for better differentiation
           const minLightness = 220; // Light gray for low connections
           const maxLightness = 34; // Dark gray/black for high connections
@@ -985,15 +984,15 @@
         }
       }
 
-      // Separate scaling function for better manuscript differentiation
+      // Separate scaling function for better source differentiation
       function getNodeColorSeparate(
         nodeType,
         connectionCount,
         maxPoemConnections,
-        maxManuscriptConnections
+        maxsourceConnections
       ) {
         const maxForType =
-          nodeType === "Poem" ? maxPoemConnections : maxManuscriptConnections;
+          nodeType === "Poem" ? maxPoemConnections : maxsourceConnections;
         const intensity = Math.max(
           0.3,
           Math.min(1.0, connectionCount / Math.max(1, maxForType))
@@ -1006,7 +1005,7 @@
           const b = 190;
           return `rgba(${r}, ${g}, ${b}, ${intensity})`;
         } else {
-          // For manuscripts (dark), create more dramatic variation
+          // For sources (dark), create more dramatic variation
           // Use a wider range from light gray to black for better differentiation
           const minLightness = 220; // Light gray for low connections
           const maxLightness = 34; // Dark gray/black for high connections
@@ -1061,7 +1060,7 @@
       }
 
       const sel = document.getElementById("poemSel");
-      const manuscriptSel = document.getElementById("manuscriptSel");
+      const sourceSel = document.getElementById("sourceSel");
       const btn = document.getElementById("goBtn");
       const maxNodesSelect = document.getElementById("maxNodes");
       const nodeCountEl = document.getElementById("nodeCount");
@@ -1070,7 +1069,7 @@
       );
 
       sel.value = "Black maid complain not that I fly";
-      manuscriptSel.value = "V.a.148.1";
+      sourceSel.value = "V.a.148.1";
 
       // Global state tracking for resize handling
       let currentCenterId = "Black maid complain not that I fly";
@@ -1080,7 +1079,7 @@
       function populateDropdowns() {
         // Clear existing options
         sel.innerHTML = "";
-        manuscriptSel.innerHTML = "";
+        sourceSel.innerHTML = "";
 
         // Populate poem dropdown - sorted by connection count (descending)
         const poems = Object.keys(POEM_TO_MSS)
@@ -1097,19 +1096,19 @@
           sel.appendChild(option);
         });
 
-        // Populate manuscript dropdown - sorted by connection count (descending)
-        const manuscripts = Object.keys(MS_TO_POEMS)
+        // Populate source dropdown - sorted by connection count (descending)
+        const sources = Object.keys(MS_TO_POEMS)
           .map((ms) => ({
             id: ms,
             count: (MS_TO_POEMS[ms] || []).length,
           }))
           .sort((a, b) => b.count - a.count);
 
-        manuscripts.forEach((ms) => {
+        sources.forEach((ms) => {
           const option = document.createElement("option");
           option.value = ms.id;
           option.textContent = `${ms.id} [${ms.count}]`;
-          manuscriptSel.appendChild(option);
+          sourceSel.appendChild(option);
         });
 
         // Set default selections to highest connected items
@@ -1117,8 +1116,8 @@
           sel.value = poems[0].title;
           currentCenterId = poems[0].title;
         }
-        if (manuscripts.length > 0) {
-          manuscriptSel.value = manuscripts[0].id;
+        if (sources.length > 0) {
+          sourceSel.value = sources[0].id;
         }
       }
 
@@ -1171,13 +1170,13 @@
           document.querySelector('input[name="centerMode"]:checked').value ===
           "poem";
         sel.disabled = !isPoemMode;
-        manuscriptSel.disabled = isPoemMode;
+        sourceSel.disabled = isPoemMode;
 
         // Update visualization based on current mode
         if (isPoemMode) {
           drawTwo(sel.value, "Poem");
         } else {
-          drawTwo(manuscriptSel.value, "Manuscript");
+          drawTwo(sourceSel.value, "source");
         }
       }
 
@@ -1188,7 +1187,7 @@
 
       // Update node count display
       function updateNodeCount(count, totalAvailable, centerType) {
-        const connectionType = centerType === "Poem" ? "manuscripts" : "poems";
+        const connectionType = centerType === "Poem" ? "sources" : "poems";
         if (count === totalAvailable) {
           nodeCountEl.textContent = `${count} ${connectionType}`;
         } else {
@@ -1228,20 +1227,18 @@
         const svg = makeSVG(width, height);
         viz.appendChild(svg);
 
-        let manuscripts = [];
+        let sources = [];
         let poems = [];
         const maxNodes = parseInt(maxNodesSelect.value) || 10;
 
         if (centerType === "Poem") {
-          const allManuscripts = (POEM_TO_MSS[centerId] || []).map((d) => ({
+          const allsources = (POEM_TO_MSS[centerId] || []).map((d) => ({
             id: d,
-            type: "Manuscript",
+            type: "source",
             name: d,
           }));
-          manuscripts =
-            maxNodes === 999
-              ? allManuscripts
-              : allManuscripts.slice(0, maxNodes);
+          sources =
+            maxNodes === 999 ? allsources : allsources.slice(0, maxNodes);
         } else {
           const allPoems = (MS_TO_POEMS[centerId] || []).map((d) => ({
             id: d,
@@ -1251,7 +1248,7 @@
           poems = maxNodes === 999 ? allPoems : allPoems.slice(0, maxNodes);
         }
 
-        const ring1 = centerType === "Poem" ? manuscripts : poems;
+        const ring1 = centerType === "Poem" ? sources : poems;
         const count1 = ring1.length || 1;
 
         // Update node count display
@@ -1315,8 +1312,8 @@
         const poemConnectionCounts = ring1
           .filter((n) => n.type === "Poem")
           .map((n) => (POEM_TO_MSS[n.id] || []).length);
-        const manuscriptConnectionCounts = ring1
-          .filter((n) => n.type === "Manuscript")
+        const sourceConnectionCounts = ring1
+          .filter((n) => n.type === "source")
           .map((n) => (MS_TO_POEMS[n.id] || []).length);
 
         const maxPoemConnections =
@@ -1328,13 +1325,13 @@
             : centerType === "Poem"
             ? centerConnections
             : 1;
-        const maxManuscriptConnections =
-          manuscriptConnectionCounts.length > 0
+        const maxsourceConnections =
+          sourceConnectionCounts.length > 0
             ? Math.max(
-                ...manuscriptConnectionCounts,
-                centerType === "Manuscript" ? centerConnections : 0
+                ...sourceConnectionCounts,
+                centerType === "source" ? centerConnections : 0
               )
-            : centerType === "Manuscript"
+            : centerType === "source"
             ? centerConnections
             : 1;
 
@@ -1348,7 +1345,7 @@
             centerType,
             centerConnections,
             maxPoemConnections,
-            maxManuscriptConnections
+            maxsourceConnections
           )
         );
         c.setAttribute("stroke", "#fff");
@@ -1402,7 +1399,7 @@
               n.type,
               connections,
               maxPoemConnections,
-              maxManuscriptConnections
+              maxsourceConnections
             )
           );
           circle.setAttribute("stroke", "#fff");
@@ -1447,7 +1444,7 @@
           });
           g.addEventListener("click", () => {
             if (n.type === "Poem") drawTwo(n.id, "Poem");
-            else drawTwo(n.id, "Manuscript");
+            else drawTwo(n.id, "source");
           });
 
           svg.appendChild(g);
@@ -1461,7 +1458,7 @@
         if (isPoemMode) {
           drawTwo(sel.value, "Poem");
         } else {
-          drawTwo(manuscriptSel.value, "Manuscript");
+          drawTwo(sourceSel.value, "source");
         }
       });
 
@@ -1474,12 +1471,12 @@
         }
       });
 
-      manuscriptSel.addEventListener("change", () => {
+      sourceSel.addEventListener("change", () => {
         if (
           document.querySelector('input[name="centerMode"]:checked').value ===
-          "manuscript"
+          "source"
         ) {
-          drawTwo(manuscriptSel.value, "Manuscript");
+          drawTwo(sourceSel.value, "source");
         }
       });
 
@@ -1490,7 +1487,7 @@
         if (isPoemMode) {
           drawTwo(sel.value, "Poem");
         } else {
-          drawTwo(manuscriptSel.value, "Manuscript");
+          drawTwo(sourceSel.value, "source");
         }
       });
 

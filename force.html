@@ -321,7 +321,7 @@
         <h2>Force Network</h2>
         <p>
           This force-directed network visualization reveals natural clustering
-          patterns in the manuscript-poem connections. Nodes are positioned by
+          patterns in the source-poem connections. Nodes are positioned by
           simulated physics - highly connected works gravitate toward the
           center, while related clusters form organically. Drag nodes to explore
           relationships, adjust forces to see different organizational patterns.
@@ -379,7 +379,7 @@
           <span class="swatch" style="background: #2b8cbe"></span> Poem
         </span>
         <span class="key">
-          <span class="swatch" style="background: #666"></span> Manuscript
+          <span class="swatch" style="background: #666"></span> source
         </span>
         <span style="margin-left: 8px; color: #666">
           (Drag nodes • Hover for connections)
@@ -621,34 +621,34 @@
           nodeMap.set(poem, node);
         });
 
-        // Create manuscript nodes
-        const manuscripts = new Set();
+        // Create source nodes
+        const sources = new Set();
         Object.values(POEM_TO_MSS)
           .flat()
-          .forEach((ms) => manuscripts.add(ms));
+          .forEach((ms) => sources.add(ms));
 
-        manuscripts.forEach((manuscript) => {
-          // Count connections to this manuscript
+        sources.forEach((source) => {
+          // Count connections to this source
           const connectionCount = Object.keys(POEM_TO_MSS).filter((poem) =>
-            POEM_TO_MSS[poem].includes(manuscript)
+            POEM_TO_MSS[poem].includes(source)
           ).length;
 
           const node = {
-            id: manuscript,
-            type: "manuscript",
+            id: source,
+            type: "source",
             connections: connectionCount,
-            name: manuscript,
+            name: source,
           };
           nodes.push(node);
-          nodeMap.set(manuscript, node);
+          nodeMap.set(source, node);
         });
 
         // Create links
-        Object.entries(POEM_TO_MSS).forEach(([poem, manuscripts]) => {
-          manuscripts.forEach((manuscript) => {
+        Object.entries(POEM_TO_MSS).forEach(([poem, sources]) => {
+          sources.forEach((source) => {
             links.push({
               source: nodeMap.get(poem),
-              target: nodeMap.get(manuscript),
+              target: nodeMap.get(source),
             });
           });
         });

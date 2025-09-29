@@ -2,7 +2,7 @@
 
 See [the visualization](https://willf.github.io/bmnetwork/) at https://willf.github.io/bmnetwork/
 
-## Mapping Manuscript Transmission in Early Modern England</h2>
+## Mapping source Transmission in Early Modern England</h2>
 
 Bacon ipsum dolor amet meatloaf tail prosciutto, tongue boudin sausage
 chuck filet mignon cow frankfurter ribeye bresaola. Picanha chicken

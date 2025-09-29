@@ -295,7 +295,7 @@
         text-anchor: end;
         font-weight: 600;
       }
-      .manuscript-label {
+      .source-label {
         text-anchor: start;
         font-weight: 500;
       }
@@ -332,18 +332,18 @@
         <h1>Tracing Race in the Archive</h1>
         <h2>Connection Heatmap</h2>
         <p>
-          This heatmap reveals connection patterns between poems and manuscripts
-          in a matrix format. Each cell represents a poem-manuscript
-          relationship, with color intensity indicating the strength or presence
-          of connections. Poems are arranged along the Y-axis, manuscripts along
-          the X-axis. Hover over cells to see specific connections.
+          This heatmap reveals connection patterns between poems and sources in
+          a matrix format. Each cell represents a poem-source relationship, with
+          color intensity indicating the strength or presence of connections.
+          Poems are arranged along the Y-axis, sources along the X-axis. Hover
+          over cells to see specific connections.
         </p>
         <p>
           The visualization makes it easy to spot clustering patterns - dense
-          vertical bands indicate manuscripts that contain many poems, while
-          dense horizontal bands show poems that appear in many manuscripts.
-          This view is particularly useful for identifying outliers and
-          understanding the overall distribution of the network.
+          vertical bands indicate sources that contain many poems, while dense
+          horizontal bands show poems that appear in many sources. This view is
+          particularly useful for identifying outliers and understanding the
+          overall distribution of the network.
         </p>
       </div>
     </section>
@@ -359,8 +359,8 @@
           </select>
         </div>
         <div class="control-group">
-          <label for="sortManuscripts">Sort manuscripts by:</label>
-          <select id="sortManuscripts">
+          <label for="sortsources">Sort sources by:</label>
+          <select id="sortsources">
             <option value="alphabetical">Alphabetical</option>
             <option value="connections">Connection count</option>
             <option value="clustering" selected>Clustering</option>
@@ -589,10 +589,10 @@
 
       // Global variables
       let poems = [];
-      let manuscripts = [];
+      let sources = [];
       let connectionMatrix = [];
       let currentPoemSort = "clustering";
-      let currentManuscriptSort = "clustering";
+      let currentsourceSort = "clustering";
 
       // Initialize the heatmap
       function initializeHeatmap() {
@@ -602,18 +602,16 @@
       }
 
       function prepareData() {
-        // Get all poems and manuscripts
+        // Get all poems and sources
         poems = Object.keys(POEM_TO_MSS);
-        manuscripts = [...new Set(Object.values(POEM_TO_MSS).flat())];
+        sources = [...new Set(Object.values(POEM_TO_MSS).flat())];
 
         // Sort based on current settings
         sortData();
 
         // Create connection matrix
         connectionMatrix = poems.map((poem) =>
-          manuscripts.map((manuscript) =>
-            POEM_TO_MSS[poem].includes(manuscript) ? 1 : 0
-          )
+          sources.map((source) => (POEM_TO_MSS[poem].includes(source) ? 1 : 0))
         );
       }
 
@@ -630,9 +628,9 @@
           }
         });
 
-        // Sort manuscripts
-        manuscripts.sort((a, b) => {
-          switch (currentManuscriptSort) {
+        // Sort sources
+        sources.sort((a, b) => {
+          switch (currentsourceSort) {
             case "connections":
               const aConnections = poems.filter((poem) =>
                 POEM_TO_MSS[poem].includes(a)
@@ -643,8 +641,8 @@
               return bConnections - aConnections;
             case "clustering":
               return (
-                calculateManuscriptClusteringScore(b) -
-                calculateManuscriptClusteringScore(a)
+                calculatesourceClusteringScore(b) -
+                calculatesourceClusteringScore(a)
               );
             default: // alphabetical
               return a.localeCompare(b);
@@ -670,19 +668,19 @@
         return totalOverlap;
       }
 
-      function calculateManuscriptClusteringScore(manuscript) {
-        // Clustering score for manuscripts based on poem overlap
-        const manuscriptPoems = poems.filter((poem) =>
-          POEM_TO_MSS[poem].includes(manuscript)
+      function calculatesourceClusteringScore(source) {
+        // Clustering score for sources based on poem overlap
+        const sourcePoems = poems.filter((poem) =>
+          POEM_TO_MSS[poem].includes(source)
         );
         let totalOverlap = 0;
 
-        manuscripts.forEach((otherMs) => {
-          if (otherMs !== manuscript) {
+        sources.forEach((otherMs) => {
+          if (otherMs !== source) {
             const otherPoems = poems.filter((poem) =>
               POEM_TO_MSS[poem].includes(otherMs)
             );
-            const overlap = manuscriptPoems.filter((poem) =>
+            const overlap = sourcePoems.filter((poem) =>
               otherPoems.includes(poem)
             ).length;
             totalOverlap += overlap;
@@ -693,7 +691,7 @@
       }
 
       function calculateStatistics() {
-        const totalCells = poems.length * manuscripts.length;
+        const totalCells = poems.length * sources.length;
         const totalConnections = connectionMatrix
           .flat()
           .reduce((sum, val) => sum + val, 0);
@@ -702,38 +700,33 @@
         const poemConnectionCounts = poems.map(
           (poem) => POEM_TO_MSS[poem].length
         );
-        const manuscriptConnectionCounts = manuscripts.map(
-          (manuscript) =>
-            poems.filter((poem) => POEM_TO_MSS[poem].includes(manuscript))
-              .length
+        const sourceConnectionCounts = sources.map(
+          (source) =>
+            poems.filter((poem) => POEM_TO_MSS[poem].includes(source)).length
         );
 
         const avgPoemConnections = (
           poemConnectionCounts.reduce((sum, val) => sum + val, 0) / poems.length
         ).toFixed(1);
-        const avgManuscriptConnections = (
-          manuscriptConnectionCounts.reduce((sum, val) => sum + val, 0) /
-          manuscripts.length
+        const avgsourceConnections = (
+          sourceConnectionCounts.reduce((sum, val) => sum + val, 0) /
+          sources.length
         ).toFixed(1);
 
         const maxPoemConnections = Math.max(...poemConnectionCounts);
-        const maxManuscriptConnections = Math.max(
-          ...manuscriptConnectionCounts
-        );
+        const maxsourceConnections = Math.max(...sourceConnectionCounts);
 
         const mostConnectedPoem =
           poems[poemConnectionCounts.indexOf(maxPoemConnections)];
-        const mostConnectedManuscript =
-          manuscripts[
-            manuscriptConnectionCounts.indexOf(maxManuscriptConnections)
-          ];
+        const mostConnectedsource =
+          sources[sourceConnectionCounts.indexOf(maxsourceConnections)];
 
         const statsHtml = `
           <div class="stats-grid">
             <div class="stat-item">
               <span>Matrix size:</span>
               <span class="stat-value">${poems.length} × ${
-          manuscripts.length
+          sources.length
         }</span>
             </div>
             <div class="stat-item">
@@ -749,8 +742,8 @@
               <span class="stat-value">${avgPoemConnections}</span>
             </div>
             <div class="stat-item">
-              <span>Avg. manuscript connections:</span>
-              <span class="stat-value">${avgManuscriptConnections}</span>
+              <span>Avg. source connections:</span>
+              <span class="stat-value">${avgsourceConnections}</span>
             </div>
             <div class="stat-item">
               <span>Most connected poem:</span>
@@ -760,8 +753,8 @@
               )} (${maxPoemConnections})</span>
             </div>
             <div class="stat-item">
-              <span>Most connected manuscript:</span>
-              <span class="stat-value">${mostConnectedManuscript} (${maxManuscriptConnections})</span>
+              <span>Most connected source:</span>
+              <span class="stat-value">${mostConnectedsource} (${maxsourceConnections})</span>
             </div>
           </div>
         `;
@@ -777,7 +770,7 @@
         const cellSize = 25;
         const labelWidth = 400;
         const labelHeight = 100;
-        const width = labelWidth + manuscripts.length * cellSize + 50;
+        const width = labelWidth + sources.length * cellSize + 50;
         const height = labelHeight + poems.length * cellSize + 50;
 
         const svg = document.createElementNS(
@@ -805,15 +798,15 @@
           svg.appendChild(text);
         });
 
-        // Draw manuscript labels (X-axis)
-        manuscripts.forEach((manuscript, i) => {
+        // Draw source labels (X-axis)
+        sources.forEach((source, i) => {
           const text = document.createElementNS(
             "http://www.w3.org/2000/svg",
             "text"
           );
           text.setAttribute("x", labelWidth + i * cellSize + cellSize / 2);
           text.setAttribute("y", labelHeight - 20);
-          text.setAttribute("class", "heatmap-labels manuscript-label");
+          text.setAttribute("class", "heatmap-labels source-label");
           text.setAttribute("text-anchor", "start");
           text.setAttribute(
             "transform",
@@ -822,13 +815,13 @@
             })`
           );
           text.setAttribute("font-size", "13");
-          text.textContent = truncateText(manuscript, 25);
+          text.textContent = truncateText(source, 25);
           svg.appendChild(text);
         });
 
         // Draw matrix cells
         poems.forEach((poem, i) => {
-          manuscripts.forEach((manuscript, j) => {
+          sources.forEach((source, j) => {
             const isConnected = connectionMatrix[i][j];
             const rect = document.createElementNS(
               "http://www.w3.org/2000/svg",
@@ -846,7 +839,7 @@
 
             // Add hover effects
             rect.addEventListener("mouseenter", (e) =>
-              showCellTooltip(e, poem, manuscript, isConnected)
+              showCellTooltip(e, poem, source, isConnected)
             );
             rect.addEventListener("mousemove", (e) => moveCellTooltip(e));
             rect.addEventListener("mouseleave", hideCellTooltip);
@@ -862,18 +855,18 @@
       }
 
       // Tooltip functions
-      function showCellTooltip(event, poem, manuscript, isConnected) {
+      function showCellTooltip(event, poem, source, isConnected) {
         const tooltip = document.getElementById("tip");
         const status = isConnected ? "Connected" : "Not connected";
         const poemConnections = POEM_TO_MSS[poem].length;
-        const manuscriptConnections = poems.filter((p) =>
-          POEM_TO_MSS[p].includes(manuscript)
+        const sourceConnections = poems.filter((p) =>
+          POEM_TO_MSS[p].includes(source)
         ).length;
 
         tooltip.innerHTML = `
           <strong>${status}</strong><br>
           Poem: ${truncateText(poem, 40)} (${poemConnections} connections)<br>
-          Manuscript: ${manuscript} (${manuscriptConnections} connections)
+          source: ${source} (${sourceConnections} connections)
         `;
         tooltip.style.display = "block";
         moveCellTooltip(event);
@@ -881,7 +874,7 @@
         // Update status
         document.getElementById(
           "statusIndicator"
-        ).textContent = `${status}: ${truncateText(poem, 20)} ↔ ${manuscript}`;
+        ).textContent = `${status}: ${truncateText(poem, 20)} ↔ ${source}`;
       }
 
       function moveCellTooltip(event) {
@@ -899,8 +892,7 @@
       // Control handlers
       function updateSorting() {
         currentPoemSort = document.getElementById("sortPoems").value;
-        currentManuscriptSort =
-          document.getElementById("sortManuscripts").value;
+        currentsourceSort = document.getElementById("sortsources").value;
         initializeHeatmap();
       }
 
@@ -918,7 +910,7 @@
           ctx.drawImage(img, 0, 0);
 
           const link = document.createElement("a");
-          link.download = "manuscript-poem-heatmap.png";
+          link.download = "source-poem-heatmap.png";
           link.href = canvas.toDataURL();
           link.click();
         };
@@ -950,7 +942,7 @@
         .getElementById("sortPoems")
         .addEventListener("change", updateSorting);
       document
-        .getElementById("sortManuscripts")
+        .getElementById("sortsources")
         .addEventListener("change", updateSorting);
       document
         .getElementById("exportBtn")

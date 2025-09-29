@@ -248,10 +248,10 @@
         <h1>Tracing Race in the Archive</h1>
         <h2>Bipartite View</h2>
         <p>
-          This bipartite visualization shows poems on the left and manuscripts
-          on the right. Click any node to toggle its connections. Nodes start in
-          a "closed" state showing no connections except backlinks from other
-          open nodes. Click to select a node and reveal its connections.
+          This bipartite visualization shows poems on the left and sources on
+          the right. Click any node to toggle its connections. Nodes start in a
+          "closed" state showing no connections except backlinks from other open
+          nodes. Click to select a node and reveal its connections.
         </p>
         <p>Check out <a href="index.html"> this alternate view</a>!</p>
       </div>
@@ -269,7 +269,7 @@
           <span class="swatch" style="background: #2b8cbe"></span> Poem
         </span>
         <span class="key">
-          <span class="swatch" style="background: #222"></span> Manuscript
+          <span class="swatch" style="background: #222"></span> source
         </span>
         <span style="margin-left: 8px; color: #666">
           (Click any node to toggle connections)
@@ -698,22 +698,22 @@
         ],
       };
 
-      const COLORS = { Poem: "#2b8cbe", Manuscript: "#222" };
+      const COLORS = { Poem: "#2b8cbe", source: "#222" };
 
       // State management for bipartite graph
       let nodeStates = new Map(); // tracks open/closed state for each node
       let svgElement = null;
       let allPoems = [];
-      let allManuscripts = [];
+      let allsources = [];
 
       // Initialize all nodes as closed
       function initializeNodeStates() {
         nodeStates.clear();
         allPoems = Object.keys(POEM_TO_MSS);
-        allManuscripts = Object.keys(MS_TO_POEMS);
+        allsources = Object.keys(MS_TO_POEMS);
 
         allPoems.forEach((poem) => nodeStates.set(poem, false));
-        allManuscripts.forEach((ms) => nodeStates.set(ms, false));
+        allsources.forEach((ms) => nodeStates.set(ms, false));
       }
 
       // Function to calculate color intensity based on connection count
@@ -840,15 +840,14 @@
 
         // Calculate required height for all nodes
         const poemNodeDiameter = 36; // Reduced: 2x the 18px font size
-        const manuscriptNodeDiameter = 20; // Increased from 16px for better proportion with 14px font
+        const sourceNodeDiameter = 20; // Increased from 16px for better proportion with 14px font
         const poemMinSpacing = Math.max(poemNodeDiameter + 10, 60); // Ensure no overlap for poems
-        const manuscriptMinSpacing = Math.max(manuscriptNodeDiameter + 8, 30);
+        const sourceMinSpacing = Math.max(sourceNodeDiameter + 8, 30);
 
         const poemRequiredHeight = allPoems.length * poemMinSpacing;
-        const manuscriptRequiredHeight =
-          allManuscripts.length * manuscriptMinSpacing;
+        const sourceRequiredHeight = allsources.length * sourceMinSpacing;
         const minRequiredHeight =
-          Math.max(poemRequiredHeight, manuscriptRequiredHeight) + 100; // Add margin
+          Math.max(poemRequiredHeight, sourceRequiredHeight) + 100; // Add margin
 
         // Use the larger of viewport height or required height
         const height = Math.max(viewportHeight, minRequiredHeight);
@@ -861,7 +860,7 @@
         const margin = 50;
         const nodeInset = 400; // Much more space for larger poem labels that extend leftward
         const poemX = margin + nodeInset;
-        const manuscriptX = width - margin - nodeInset;
+        const sourceX = width - margin - nodeInset;
         const centerX = width / 2;
 
         // Node sizing and spacing (use already declared variables)
@@ -869,33 +868,28 @@
           poemMinSpacing,
           (height - 100) / allPoems.length // Account for margins
         );
-        const manuscriptSpacing = Math.max(
-          manuscriptMinSpacing,
-          (height - 100) / allManuscripts.length // Account for margins
+        const sourceSpacing = Math.max(
+          sourceMinSpacing,
+          (height - 100) / allsources.length // Account for margins
         );
 
         // Calculate maximum connections for color intensity
         const poemConnectionCounts = allPoems.map(
           (poem) => (POEM_TO_MSS[poem] || []).length
         );
-        const manuscriptConnectionCounts = allManuscripts.map(
+        const sourceConnectionCounts = allsources.map(
           (ms) => (MS_TO_POEMS[ms] || []).length
         );
         const maxPoemConnections = Math.max(...poemConnectionCounts);
-        const maxManuscriptConnections = Math.max(
-          ...manuscriptConnectionCounts
-        );
+        const maxsourceConnections = Math.max(...sourceConnectionCounts);
 
         // Calculate vertical centering with separate spacing for each side
         const poemTotalHeight = allPoems.length * poemSpacing;
-        const manuscriptTotalHeight = allManuscripts.length * manuscriptSpacing;
+        const sourceTotalHeight = allsources.length * sourceSpacing;
 
         // Ensure we don't get negative start positions
         const poemStartY = Math.max(50, (height - poemTotalHeight) / 2);
-        const manuscriptStartY = Math.max(
-          50,
-          (height - manuscriptTotalHeight) / 2
-        );
+        const sourceStartY = Math.max(50, (height - sourceTotalHeight) / 2);
 
         // Position poems on the left (centered vertically)
         const poemPositions = new Map();
@@ -904,15 +898,15 @@
           poemPositions.set(poem, { x: poemX, y });
         });
 
-        // Position manuscripts on the right (centered vertically)
-        const manuscriptPositions = new Map();
-        allManuscripts.forEach((manuscript, i) => {
-          const y = manuscriptStartY + (i + 0.5) * manuscriptSpacing;
-          manuscriptPositions.set(manuscript, { x: manuscriptX, y });
+        // Position sources on the right (centered vertically)
+        const sourcePositions = new Map();
+        allsources.forEach((source, i) => {
+          const y = sourceStartY + (i + 0.5) * sourceSpacing;
+          sourcePositions.set(source, { x: sourceX, y });
         });
 
         // Draw connections first (so they appear behind nodes)
-        drawConnections(svg, poemPositions, manuscriptPositions);
+        drawConnections(svg, poemPositions, sourcePositions);
 
         // Draw poem nodes
         allPoems.forEach((poem) => {
@@ -930,25 +924,25 @@
           );
         });
 
-        // Draw manuscript nodes
-        allManuscripts.forEach((manuscript) => {
-          const pos = manuscriptPositions.get(manuscript);
-          const isOpen = nodeStates.get(manuscript);
-          const connectionCount = (MS_TO_POEMS[manuscript] || []).length;
+        // Draw source nodes
+        allsources.forEach((source) => {
+          const pos = sourcePositions.get(source);
+          const isOpen = nodeStates.get(source);
+          const connectionCount = (MS_TO_POEMS[source] || []).length;
           drawNode(
             svg,
-            manuscript,
-            "Manuscript",
+            source,
+            "source",
             pos,
             connectionCount,
-            maxManuscriptConnections,
+            maxsourceConnections,
             isOpen
           );
         });
       }
 
       // Draw connections between nodes
-      function drawConnections(svg, poemPositions, manuscriptPositions) {
+      function drawConnections(svg, poemPositions, sourcePositions) {
         // Determine which connections to show
         const connectionsToShow = new Set();
 
@@ -956,12 +950,12 @@
         nodeStates.forEach((isOpen, nodeId) => {
           if (isOpen) {
             if (allPoems.includes(nodeId)) {
-              // Open poem - show all its manuscript connections
-              (POEM_TO_MSS[nodeId] || []).forEach((manuscript) => {
-                connectionsToShow.add(`${nodeId}:${manuscript}`);
+              // Open poem - show all its source connections
+              (POEM_TO_MSS[nodeId] || []).forEach((source) => {
+                connectionsToShow.add(`${nodeId}:${source}`);
               });
             } else {
-              // Open manuscript - show all its poem connections
+              // Open source - show all its poem connections
               (MS_TO_POEMS[nodeId] || []).forEach((poem) => {
                 connectionsToShow.add(`${poem}:${nodeId}`);
               });
@@ -971,16 +965,16 @@
 
         // Draw the connections
         connectionsToShow.forEach((connectionKey) => {
-          const [poemId, manuscriptId] = connectionKey.split(":");
+          const [poemId, sourceId] = connectionKey.split(":");
           const poemPos = poemPositions.get(poemId);
-          const manuscriptPos = manuscriptPositions.get(manuscriptId);
+          const sourcePos = sourcePositions.get(sourceId);
 
-          if (poemPos && manuscriptPos) {
+          if (poemPos && sourcePos) {
             const line = document.createElementNS(svgNS, "line");
             line.setAttribute("x1", poemPos.x + 18); // offset for smaller poem node radius (18px)
             line.setAttribute("y1", poemPos.y);
-            line.setAttribute("x2", manuscriptPos.x - 10); // offset for larger manuscript node radius (10px)
-            line.setAttribute("y2", manuscriptPos.y);
+            line.setAttribute("x2", sourcePos.x - 10); // offset for larger source node radius (10px)
+            line.setAttribute("y2", sourcePos.y);
             line.setAttribute("stroke", "#999");
             line.setAttribute("stroke-width", "1");
             line.setAttribute("stroke-opacity", "0.6");
@@ -1010,18 +1004,18 @@
           nodeStates.forEach((otherIsOpen, otherNodeId) => {
             if (otherIsOpen && otherNodeId !== nodeId) {
               if (nodeType === "Poem") {
-                // This is a closed poem - count open manuscripts that connect to it
-                if (allManuscripts.includes(otherNodeId)) {
-                  const manuscriptPoems = MS_TO_POEMS[otherNodeId] || [];
-                  if (manuscriptPoems.includes(nodeId)) {
+                // This is a closed poem - count open sources that connect to it
+                if (allsources.includes(otherNodeId)) {
+                  const sourcePoems = MS_TO_POEMS[otherNodeId] || [];
+                  if (sourcePoems.includes(nodeId)) {
                     visibleConnectionsToThisNode++;
                   }
                 }
               } else {
-                // This is a closed manuscript - count open poems that connect to it
+                // This is a closed source - count open poems that connect to it
                 if (allPoems.includes(otherNodeId)) {
-                  const poemManuscripts = POEM_TO_MSS[otherNodeId] || [];
-                  if (poemManuscripts.includes(nodeId)) {
+                  const poemsources = POEM_TO_MSS[otherNodeId] || [];
+                  if (poemsources.includes(nodeId)) {
                     visibleConnectionsToThisNode++;
                   }
                 }
@@ -1031,7 +1025,7 @@
         }
 
         // Node circle with shadow
-        const nodeRadius = nodeType === "Poem" ? 18 : 10; // Poems: 36px diameter, Manuscripts: 20px diameter (increased from 16px)
+        const nodeRadius = nodeType === "Poem" ? 18 : 10; // Poems: 36px diameter, sources: 20px diameter (increased from 16px)
         const shadow = document.createElementNS(svgNS, "circle");
         shadow.setAttribute("cx", position.x + 1);
         shadow.setAttribute("cy", position.y + 1);
@@ -1051,14 +1045,14 @@
         const strokeColor = isOpen
           ? nodeType === "Poem"
             ? "#333"
-            : "#2b8cbe" // Poems: dark gray, Manuscripts: dark blue
+            : "#2b8cbe" // Poems: dark gray, sources: dark blue
           : "#fff"; // Both use white when closed
         circle.setAttribute("stroke", strokeColor);
         circle.setAttribute("stroke-width", isOpen ? "3" : "2");
         g.appendChild(circle);
 
         // Label positioning (labels on outside)
-        const labelOffset = nodeType === "Poem" ? 28 : 18; // Increased manuscript offset (10px radius + 8px gap)
+        const labelOffset = nodeType === "Poem" ? 28 : 18; // Increased source offset (10px radius + 8px gap)
         const labelX =
           nodeType === "Poem"
             ? position.x - labelOffset
@@ -1067,10 +1061,10 @@
 
         // Add connection count to label
         const labelText = `${nodeId} [${connectionCount}]`;
-        // Poems get more width and larger font, manuscripts stay the same
+        // Poems get more width and larger font, sources stay the same
         const wrapWidth = nodeType === "Poem" ? 50 : 35;
-        const fontSize = nodeType === "Poem" ? "18" : "14"; // Increased manuscript font from 12 to 14
-        const lineHeight = nodeType === "Poem" ? 22 : 18; // Increased manuscript line height from 16 to 18
+        const fontSize = nodeType === "Poem" ? "18" : "14"; // Increased source font from 12 to 14
+        const lineHeight = nodeType === "Poem" ? 22 : 18; // Increased source line height from 16 to 18
         const lines = wrapText(labelText, wrapWidth);
 
         lines.forEach((line, i) => {
