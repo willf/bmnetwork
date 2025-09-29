@@ -265,18 +265,20 @@
         <h1>Tracing Race in the Archive</h1>
         <h2>Bipartite View</h2>
         <p>
-          This bipartite visualization shows poems on the left and manuscripts on the right. 
-          Click any node to toggle its connections. Nodes start in a "closed" state showing 
-          no connections except backlinks from other open nodes. Click to "open" a node and 
-          reveal all its connections.
+          This bipartite visualization shows poems on the left and manuscripts
+          on the right. Click any node to toggle its connections. Nodes start in
+          a "closed" state showing no connections except backlinks from other
+          open nodes. Click to "open" a node and reveal all its connections.
         </p>
       </div>
     </section>
-    
+
     <header>
       <div class="controls">
         <button id="resetBtn">Reset All</button>
-        <div id="statusIndicator" class="status-indicator">Click nodes to explore connections</div>
+        <div id="statusIndicator" class="status-indicator">
+          Click nodes to explore connections
+        </div>
       </div>
       <div class="legend">
         <span class="key">
@@ -290,7 +292,7 @@
         </span>
       </div>
     </header>
-    
+
     <div id="viz">
       <div class="section-label poems-label">Poems</div>
       <div class="section-label manuscripts-label">Manuscripts</div>
@@ -728,13 +730,18 @@
         nodeStates.clear();
         allPoems = Object.keys(POEM_TO_MSS);
         allManuscripts = Object.keys(MS_TO_POEMS);
-        
-        allPoems.forEach(poem => nodeStates.set(poem, false));
-        allManuscripts.forEach(ms => nodeStates.set(ms, false));
+
+        allPoems.forEach((poem) => nodeStates.set(poem, false));
+        allManuscripts.forEach((ms) => nodeStates.set(ms, false));
       }
 
       // Function to calculate color intensity based on connection count
-      function getNodeColor(nodeType, connectionCount, maxConnections, isOpen = false) {
+      function getNodeColor(
+        nodeType,
+        connectionCount,
+        maxConnections,
+        isOpen = false
+      ) {
         const baseColor = COLORS[nodeType];
         const intensity = Math.max(
           0.3,
@@ -753,7 +760,8 @@
           const minLightness = 220;
           const maxLightness = 34;
           const lightness = Math.floor(
-            (minLightness - (minLightness - maxLightness) * intensity) / openMultiplier
+            (minLightness - (minLightness - maxLightness) * intensity) /
+              openMultiplier
           );
           return `rgb(${lightness}, ${lightness}, ${lightness})`;
         }
@@ -774,9 +782,10 @@
 
       function showTip(ev, node, isOpen) {
         const status = isOpen ? "open" : "closed";
-        const connectionCount = node.type === "Poem" 
-          ? (POEM_TO_MSS[node.name] || []).length
-          : (MS_TO_POEMS[node.name] || []).length;
+        const connectionCount =
+          node.type === "Poem"
+            ? (POEM_TO_MSS[node.name] || []).length
+            : (MS_TO_POEMS[node.name] || []).length;
         tooltip.textContent = `${node.name} (${node.type}) — ${connectionCount} connections — ${status} — click to toggle`;
         tooltip.style.display = "block";
         moveTip(ev);
@@ -827,13 +836,17 @@
 
       // Update status indicator
       function updateStatusIndicator() {
-        const openNodes = Array.from(nodeStates.entries()).filter(([id, isOpen]) => isOpen);
+        const openNodes = Array.from(nodeStates.entries()).filter(
+          ([id, isOpen]) => isOpen
+        );
         const statusEl = document.getElementById("statusIndicator");
-        
+
         if (openNodes.length === 0) {
           statusEl.textContent = "Click nodes to explore connections";
         } else {
-          statusEl.textContent = `${openNodes.length} node${openNodes.length > 1 ? 's' : ''} open`;
+          statusEl.textContent = `${openNodes.length} node${
+            openNodes.length > 1 ? "s" : ""
+          } open`;
         }
       }
 
@@ -853,31 +866,52 @@
 
         // Calculate layout parameters
         const margin = 50;
-        const poemX = margin;
-        const manuscriptX = width - margin;
+        const nodeInset = 400; // Much more space for larger poem labels that extend leftward
+        const poemX = margin + nodeInset;
+        const manuscriptX = width - margin - nodeInset;
         const centerX = width / 2;
 
-        // Node sizing
-        const nodeRadius = 8;
-        const nodeSpacing = Math.max(25, height / Math.max(allPoems.length, allManuscripts.length));
+        // Node sizing and spacing
+        const poemNodeDiameter = 48; // Large poem nodes
+        const manuscriptNodeDiameter = 16; // Smaller manuscript nodes
+        const poemMinSpacing = Math.max(poemNodeDiameter + 10, 60); // Ensure no overlap for poems
+        const manuscriptMinSpacing = Math.max(manuscriptNodeDiameter + 8, 30); // Tighter spacing for manuscripts
+
+        const poemSpacing = Math.max(poemMinSpacing, height / allPoems.length);
+        const manuscriptSpacing = Math.max(
+          manuscriptMinSpacing,
+          height / allManuscripts.length
+        );
 
         // Calculate maximum connections for color intensity
-        const poemConnectionCounts = allPoems.map(poem => (POEM_TO_MSS[poem] || []).length);
-        const manuscriptConnectionCounts = allManuscripts.map(ms => (MS_TO_POEMS[ms] || []).length);
+        const poemConnectionCounts = allPoems.map(
+          (poem) => (POEM_TO_MSS[poem] || []).length
+        );
+        const manuscriptConnectionCounts = allManuscripts.map(
+          (ms) => (MS_TO_POEMS[ms] || []).length
+        );
         const maxPoemConnections = Math.max(...poemConnectionCounts);
-        const maxManuscriptConnections = Math.max(...manuscriptConnectionCounts);
+        const maxManuscriptConnections = Math.max(
+          ...manuscriptConnectionCounts
+        );
 
-        // Position poems on the left
+        // Calculate vertical centering with separate spacing for each side
+        const poemTotalHeight = allPoems.length * poemSpacing;
+        const manuscriptTotalHeight = allManuscripts.length * manuscriptSpacing;
+        const poemStartY = (height - poemTotalHeight) / 2;
+        const manuscriptStartY = (height - manuscriptTotalHeight) / 2;
+
+        // Position poems on the left (centered vertically)
         const poemPositions = new Map();
         allPoems.forEach((poem, i) => {
-          const y = margin + (i + 0.5) * nodeSpacing;
+          const y = poemStartY + (i + 0.5) * poemSpacing;
           poemPositions.set(poem, { x: poemX, y });
         });
 
-        // Position manuscripts on the right
+        // Position manuscripts on the right (centered vertically)
         const manuscriptPositions = new Map();
         allManuscripts.forEach((manuscript, i) => {
-          const y = margin + (i + 0.5) * nodeSpacing;
+          const y = manuscriptStartY + (i + 0.5) * manuscriptSpacing;
           manuscriptPositions.set(manuscript, { x: manuscriptX, y });
         });
 
@@ -885,19 +919,35 @@
         drawConnections(svg, poemPositions, manuscriptPositions);
 
         // Draw poem nodes
-        allPoems.forEach(poem => {
+        allPoems.forEach((poem) => {
           const pos = poemPositions.get(poem);
           const isOpen = nodeStates.get(poem);
           const connectionCount = (POEM_TO_MSS[poem] || []).length;
-          drawNode(svg, poem, "Poem", pos, connectionCount, maxPoemConnections, isOpen);
+          drawNode(
+            svg,
+            poem,
+            "Poem",
+            pos,
+            connectionCount,
+            maxPoemConnections,
+            isOpen
+          );
         });
 
         // Draw manuscript nodes
-        allManuscripts.forEach(manuscript => {
+        allManuscripts.forEach((manuscript) => {
           const pos = manuscriptPositions.get(manuscript);
           const isOpen = nodeStates.get(manuscript);
           const connectionCount = (MS_TO_POEMS[manuscript] || []).length;
-          drawNode(svg, manuscript, "Manuscript", pos, connectionCount, maxManuscriptConnections, isOpen);
+          drawNode(
+            svg,
+            manuscript,
+            "Manuscript",
+            pos,
+            connectionCount,
+            maxManuscriptConnections,
+            isOpen
+          );
         });
       }
 
@@ -911,12 +961,12 @@
           if (isOpen) {
             if (allPoems.includes(nodeId)) {
               // Open poem - show all its manuscript connections
-              (POEM_TO_MSS[nodeId] || []).forEach(manuscript => {
+              (POEM_TO_MSS[nodeId] || []).forEach((manuscript) => {
                 connectionsToShow.add(`${nodeId}:${manuscript}`);
               });
             } else {
               // Open manuscript - show all its poem connections
-              (MS_TO_POEMS[nodeId] || []).forEach(poem => {
+              (MS_TO_POEMS[nodeId] || []).forEach((poem) => {
                 connectionsToShow.add(`${poem}:${nodeId}`);
               });
             }
@@ -924,16 +974,16 @@
         });
 
         // Draw the connections
-        connectionsToShow.forEach(connectionKey => {
-          const [poemId, manuscriptId] = connectionKey.split(':');
+        connectionsToShow.forEach((connectionKey) => {
+          const [poemId, manuscriptId] = connectionKey.split(":");
           const poemPos = poemPositions.get(poemId);
           const manuscriptPos = manuscriptPositions.get(manuscriptId);
 
           if (poemPos && manuscriptPos) {
             const line = document.createElementNS(svgNS, "line");
-            line.setAttribute("x1", poemPos.x + 8); // offset for node radius
+            line.setAttribute("x1", poemPos.x + 24); // offset for larger poem node radius
             line.setAttribute("y1", poemPos.y);
-            line.setAttribute("x2", manuscriptPos.x - 8); // offset for node radius
+            line.setAttribute("x2", manuscriptPos.x - 8); // offset for manuscript node radius
             line.setAttribute("y2", manuscriptPos.y);
             line.setAttribute("stroke", "#999");
             line.setAttribute("stroke-width", "1");
@@ -944,45 +994,65 @@
       }
 
       // Draw individual node
-      function drawNode(svg, nodeId, nodeType, position, connectionCount, maxConnections, isOpen) {
+      function drawNode(
+        svg,
+        nodeId,
+        nodeType,
+        position,
+        connectionCount,
+        maxConnections,
+        isOpen
+      ) {
         const g = document.createElementNS(svgNS, "g");
         g.style.cursor = "pointer";
         g.setAttribute("class", "node-group");
 
         // Node circle with shadow
+        const nodeRadius = nodeType === "Poem" ? 24 : 8; // Poems: 48px diameter (2x font height), Manuscripts: 16px
         const shadow = document.createElementNS(svgNS, "circle");
         shadow.setAttribute("cx", position.x + 1);
         shadow.setAttribute("cy", position.y + 1);
-        shadow.setAttribute("r", 8);
+        shadow.setAttribute("r", nodeRadius);
         shadow.setAttribute("fill", "rgba(0,0,0,0.1)");
         g.appendChild(shadow);
 
         const circle = document.createElementNS(svgNS, "circle");
         circle.setAttribute("cx", position.x);
         circle.setAttribute("cy", position.y);
-        circle.setAttribute("r", isOpen ? 10 : 8); // Larger when open
-        circle.setAttribute("fill", getNodeColor(nodeType, connectionCount, maxConnections, isOpen));
+        circle.setAttribute("r", isOpen ? nodeRadius + 2 : nodeRadius); // Slightly larger when open
+        circle.setAttribute(
+          "fill",
+          getNodeColor(nodeType, connectionCount, maxConnections, isOpen)
+        );
         circle.setAttribute("stroke", isOpen ? "#333" : "#fff");
         circle.setAttribute("stroke-width", isOpen ? "3" : "2");
         g.appendChild(circle);
 
-        // Label positioning
-        const labelOffset = 15;
-        const labelX = nodeType === "Poem" 
-          ? position.x + labelOffset 
-          : position.x - labelOffset;
-        const anchor = nodeType === "Poem" ? "start" : "end";
+        // Label positioning (labels on outside)
+        const labelOffset = nodeType === "Poem" ? 35 : 15; // More space for larger poem nodes (24px radius + 10px gap)
+        const labelX =
+          nodeType === "Poem"
+            ? position.x - labelOffset
+            : position.x + labelOffset;
+        const anchor = nodeType === "Poem" ? "end" : "start";
 
         // Add connection count to label
         const labelText = `${nodeId} [${connectionCount}]`;
-        const lines = wrapText(labelText, 35);
-        
+        // Poems get more width and larger font, manuscripts stay the same
+        const wrapWidth = nodeType === "Poem" ? 50 : 35;
+        const fontSize = nodeType === "Poem" ? "24" : "12";
+        const lineHeight = nodeType === "Poem" ? 28 : 16;
+        const lines = wrapText(labelText, wrapWidth);
+
         lines.forEach((line, i) => {
           const label = document.createElementNS(svgNS, "text");
           label.setAttribute("x", labelX);
-          label.setAttribute("y", position.y + (i - lines.length/2 + 0.5) * 16);
+          label.setAttribute(
+            "y",
+            position.y + (i - lines.length / 2 + 0.5) * lineHeight
+          );
           label.setAttribute("text-anchor", anchor);
-          label.setAttribute("font-size", "12");
+          label.setAttribute("font-size", fontSize);
           label.setAttribute("font-weight", isOpen ? "600" : "400");
           label.setAttribute("fill", isOpen ? "#000" : "#444");
           label.textContent = line;
@@ -992,12 +1062,12 @@
         // Event handlers
         g.addEventListener("mouseenter", (ev) => {
           showTip(ev, { name: nodeId, type: nodeType }, isOpen);
-          circle.setAttribute("r", isOpen ? 12 : 10);
+          circle.setAttribute("r", isOpen ? nodeRadius + 4 : nodeRadius + 2); // Grow on hover
         });
         g.addEventListener("mousemove", (ev) => moveTip(ev));
         g.addEventListener("mouseleave", () => {
           hideTip();
-          circle.setAttribute("r", isOpen ? 10 : 8);
+          circle.setAttribute("r", isOpen ? nodeRadius + 2 : nodeRadius); // Back to normal
         });
         g.addEventListener("click", () => {
           toggleNode(nodeId);
@@ -1026,11 +1096,13 @@
       }
 
       // Event listeners
-      document.getElementById("resetBtn").addEventListener("click", resetAllNodes);
+      document
+        .getElementById("resetBtn")
+        .addEventListener("click", resetAllNodes);
 
       // Resize handler
       let resizeTimeout;
-      window.addEventListener("resize", function() {
+      window.addEventListener("resize", function () {
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(() => {
           drawBipartiteGraph();
