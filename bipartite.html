@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Tracing Race in the Archive - Bipartite View</title>
+    <!-- Renaissance-inspired typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Cinzel:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        font-family: "Georgia", "Adobe Garamond Pro", "Garamond",
+          "Times New Roman", "Book Antiqua", serif;
+        font-feature-settings: "liga" 1, "dlig" 1, "kern" 1;
+        text-rendering: optimizeLegibility;
+        display: flex;
+        flex-direction: column;
+      }
+      header {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding: 8px 16px;
+        border-bottom: 1px solid #eee;
+        flex-wrap: wrap;
+        background: #fafafa;
+      }
+      #viz {
+        width: 100%;
+        height: calc(100vh - 140px); /* Account for header and footer */
+        background: linear-gradient(
+          to right,
+          #f8f9fa 0%,
+          #ffffff 50%,
+          #f8f9fa 100%
+        );
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+      }
+      .legend {
+        margin-left: auto;
+        display: inline-flex;
+        gap: 16px;
+        align-items: center;
+      }
+      .key {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .swatch {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #777;
+        display: inline-block;
+      }
+      .tooltip {
+        position: fixed;
+        pointer-events: none;
+        background: rgba(0, 0, 0, 0.9);
+        color: #fff;
+        font-size: 13px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        transform: translate(-50%, -120%);
+        white-space: nowrap;
+        z-index: 10;
+        display: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      }
+      .hero {
+        background: linear-gradient(
+            135deg,
+            rgba(43, 140, 190, 0.9),
+            rgba(0, 0, 0, 0.7)
+          ),
+          url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImIiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIgZmlsbD0iIzMzMyIgZmlsbC1vcGFjaXR5PSIwLjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjYikiLz48L3N2Zz4=")
+            repeat;
+        color: white;
+        padding: 30px 20px;
+        text-align: center;
+        position: relative;
+        border-bottom: 3px solid #2b8cbe;
+      }
+      .hero::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iMjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzMzMyIgc3Ryb2tlLXdpZHRoPSIwLjUiIHN0cm9rZS1vcGFjaXR5PSIwLjE1Ii8+PGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iMzAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzMzMyIgc3Ryb2tlLXdpZHRoPSIwLjMiIHN0cm9rZS1vcGFjaXR5PSIwLjEiLz48L3N2Zz4=")
+          repeat;
+        opacity: 0.3;
+      }
+      .hero-content {
+        position: relative;
+        z-index: 1;
+        max-width: 900px;
+        margin: 0 auto;
+      }
+      .hero h1 {
+        font-family: "Cinzel", "Trajan Pro", "Optima", serif;
+        font-size: 2.8rem;
+        margin: 0 0 16px 0;
+        font-weight: 400;
+        letter-spacing: 2px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        text-transform: uppercase;
+      }
+      .hero h2 {
+        font-family: "Crimson Text", "Adobe Garamond Pro", "Garamond", serif;
+        font-size: 1.3rem;
+        margin: 0 0 24px 0;
+        font-weight: 400;
+        opacity: 0.95;
+        font-style: italic;
+        letter-spacing: 0.5px;
+      }
+      .hero-toggle {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        z-index: 10;
+      }
+      .hero-toggle:hover {
+        background: rgba(255, 255, 255, 0.3);
+        border-color: rgba(255, 255, 255, 0.5);
+      }
+      .hero.collapsed {
+        padding: 12px 20px;
+        min-height: auto;
+      }
+      .hero.collapsed .hero-content > *:not(h1) {
+        display: none;
+      }
+      .hero.collapsed .hero-content h1 {
+        font-size: 1.8rem;
+        margin: 0;
+      }
+      /* When hero is expanded, move toggle to bottom right */
+      .hero:not(.collapsed) .hero-toggle {
+        top: auto;
+        bottom: 15px;
+        right: 15px;
+      }
+      /* Beautiful link styling */
+      a {
+        color: #2b8cbe;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        position: relative;
+        border-bottom: 2px solid transparent;
+      }
+      a:hover {
+        color: #1a6b8f;
+        border-bottom-color: #2b8cbe;
+      }
+      /* Special styling for links in hero section */
+      .hero a {
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 600;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+      }
+      .hero a:hover {
+        color: white;
+        border-bottom-color: rgba(255, 255, 255, 0.8);
+        text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+      }
+      /* Footer styling */
+      footer {
+        background: #f8f9fa;
+        border-top: 1px solid #eee;
+        padding: 16px 20px;
+        text-align: center;
+        font-size: 14px;
+        color: #666;
+        margin-top: auto;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 1000;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      footer .footer-content {
+        max-width: 900px;
+        margin: 0 auto;
+      }
+      footer p {
+        margin: 0;
+        font-family: "Crimson Text", serif;
+        letter-spacing: 0.2px;
+      }
+      footer a {
+        color: #2b8cbe;
+        font-weight: 500;
+      }
+      footer a:hover {
+        color: #1a6b8f;
+      }
+      /* Remove bullet points from poem list */
+      ul {
+        list-style: none;
+        padding-left: 0;
+      }
+      /* Bipartite-specific styles */
+      .controls {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+      }
+      .status-indicator {
+        background: #e8f4f8;
+        color: #2b8cbe;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        border: 1px solid #2b8cbe;
+      }
+      .section-label {
+        position: absolute;
+        font-family: "Cinzel", serif;
+        font-size: 18px;
+        font-weight: 500;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        z-index: 5;
+      }
+      .poems-label {
+        left: 20px;
+        top: 20px;
+      }
+      .manuscripts-label {
+        right: 20px;
+        top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <section class="hero collapsed" id="heroSection">
+      <button class="hero-toggle" id="heroToggle" onclick="toggleHero()">
+        Show Info
+      </button>
+      <div class="hero-content">
+        <h1>Tracing Race in the Archive</h1>
+        <h2>Bipartite View</h2>
+        <p>
+          This bipartite visualization shows poems on the left and manuscripts on the right. 
+          Click any node to toggle its connections. Nodes start in a "closed" state showing 
+          no connections except backlinks from other open nodes. Click to "open" a node and 
+          reveal all its connections.
+        </p>
+      </div>
+    </section>
+    
+    <header>
+      <div class="controls">
+        <button id="resetBtn">Reset All</button>
+        <div id="statusIndicator" class="status-indicator">Click nodes to explore connections</div>
+      </div>
+      <div class="legend">
+        <span class="key">
+          <span class="swatch" style="background: #2b8cbe"></span> Poem
+        </span>
+        <span class="key">
+          <span class="swatch" style="background: #222"></span> Manuscript
+        </span>
+        <span style="margin-left: 8px; color: #666">
+          (Click any node to toggle connections)
+        </span>
+      </div>
+    </header>
+    
+    <div id="viz">
+      <div class="section-label poems-label">Poems</div>
+      <div class="section-label manuscripts-label">Manuscripts</div>
+    </div>
+    <div id="tip" class="tooltip"></div>
+
+    <footer>
+      <div class="footer-content">
+        <p>
+          Analysis by <a href="#">Thomas Ward</a> • Visualization by
+          <a href="https://github.com/willf">Will Fitzgerald</a> Made with ❤️.
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      const POEM_TO_MSS = {
+        "Why lovely boy why fliest thou me": [
+          "Add. 11811",
+          "Add. 15227",
+          "Add. 19268",
+          "Add. 22118",
+          "Add. 22582",
+          "Add. 30982",
+          "Add. 44963",
+          "Add. 62134",
+          "Ashmole 47",
+          "Corpus Christi 328",
+          "Eng. misc. e. 13",
+          "Eng. poet. e. 30",
+          "Eng. poet. f. 16",
+          "G1401B",
+          "HM116",
+          "Harley 3511",
+          "Harley 6931",
+          "K0501",
+          "L0643",
+          "Lansdowne 777",
+          "MS 240/7",
+          "MS Eng 703",
+          "Malone 21",
+          "Rawl. D. 1092 (attr. Strode)",
+          "Rawl. poet. 116",
+          "Rawl. poet. 199",
+          "Rawl. poet. 84",
+          "Sloane 1446",
+          "Sloane 1792",
+          "Sloane 542",
+          "V.a.124",
+          "V.a.148.1",
+          "V.a.170",
+          "V.a.319 (back of ms.)",
+          "V.a.322",
+          "V.a.339",
+          "V.a.97",
+          "V.b.110",
+          "V.b.43",
+          "W3686",
+          "b.200",
+          "b.205",
+          "b.62",
+        ],
+        "Black Cypress veils are shrouds of night": [
+          "Add. 11811",
+          "Add. 22118",
+          "Add. 44963",
+          "Ashmole 47",
+          "HM116",
+          "Harley 3511",
+          "Malone 21",
+          "V.a.322",
+          "W3686",
+        ],
+        "Black maid complain not that I fly": [
+          "Add. 11811",
+          "Add. 15227",
+          "Add. 22118",
+          "Add. 22582",
+          "Add. 30982",
+          "Add. 44963",
+          "Add. 62134",
+          "Ashmole 47",
+          "Corpus Christi 328",
+          "Eng. misc. e. 13",
+          "Eng. poet. e. 30",
+          "Eng. poet. f. 16",
+          "G1401B",
+          "HM116",
+          "Harley 3511",
+          "Harley 6931",
+          "K0501",
+          "L0643",
+          "MS 240/7",
+          "MS Eng 703",
+          "Malone 21",
+          "Rawl. D. 1092",
+          "Rawl. poet. 116",
+          "Rawl. poet. 199",
+          "Rawl. poet. 84",
+          "Sloane 1446",
+          "Sloane 1792",
+          "V.a.124",
+          "V.a.148.1",
+          "V.a.170",
+          "V.a.319 (back of MS)",
+          "V.a.322",
+          "V.a.339",
+          "V.a.97",
+          "V.b.110",
+          "V.b.43",
+          "W3686",
+          "b.200",
+          "b.205",
+          "b.62",
+        ],
+        "From Julia's whiter hand a snowball came": ["Rawl. poet. 116"],
+        "My king turned Ethiopian with the rays": ["Rawl. poet. 116"],
+        "Have you beheld the little sable beast": ["G1401B"],
+        "Let it no longer be a forlorn hope": ["V.a.148.1"],
+        "I saw fair Chloris walk alone": [
+          "Add. 11811",
+          "Add. 15227",
+          "Add. 19268",
+          "Add. 30982",
+          "Add. 44963",
+          "Corpus Christi 328",
+          "G1401B",
+          "HM116",
+          "Harley 3511",
+          "Harley 6931",
+          "Rawl. poet. 116",
+          "Rawl. poet. 199",
+          "Sloane 1446",
+          "Sloane 1792",
+          "V.a.124",
+          "V.a.148.1",
+          "V.a.170",
+          "V.a.319",
+          "V.a.97",
+          "V.b.43",
+          "W3686",
+          "b.200",
+          "b.62",
+        ],
+        "Thou'rt fair and black thy brows as black as jet": ["V.a.148.1"],
+        "Stand off and let me take the air": ["Add. 30982", "Harley 3511"],
+        "If shadows be a picture's excellence": [
+          "Add. 11811",
+          "Add. 22118",
+          "Add. 30982",
+          "Ashmole 47",
+          "Corpus Christi 328",
+          "Eng. poet. f. 16 (attr. Donne)",
+          "HM116",
+          "Harley 6931",
+          "Lansdowne 777",
+          "MS 240/7",
+          "Rawl. poet. 199",
+          "Sloane 1446",
+          "Sloane 1792",
+          "Sloane 542",
+          "V.a.124",
+          "V.a.170",
+          "V.a.319",
+          "V.a.322",
+          "V.a.97",
+          "V.b.43",
+          "W3686",
+          "b.200",
+          "b.205",
+          "b.62",
+        ],
+        "The present's black and light as a feather": ["V.a.97"],
+        "Now black-brow'd night plac't in her chair of jet": ["HM116"],
+        "I can love both fair and brown,": ["b.205"],
+        "Matchless though black thou art, nature's sweet error": ["MS Eng 703"],
+        "Grieve not (fair maid) 'cause you are black; so's she": ["W3686"],
+        "To the red man read thy read,": ["Ashmole 47", "G1401B"],
+        "Under this marble lies entomb'd a More": ["Add. 15227"],
+      };
+
+      const MS_TO_POEMS = {
+        "V.a.148.1": [
+          "Black maid complain not that I fly",
+          "I saw fair Chloris walk alone",
+          "Let it no longer be a forlorn hope",
+          "Thou'rt fair and black thy brows as black as jet",
+          "Why lovely boy why fliest thou me",
+        ],
+        "Sloane 542": [
+          "If shadows be a picture's excellence",
+          "Why lovely boy why fliest thou me",
+        ],
+        "V.a.322": [
+          "Black Cypress veils are shrouds of night",
+          "Black maid complain not that I fly",
+          "If shadows be a picture's excellence",
+          "Why lovely boy why fliest thou me",
+        ],
+        "V.b.43": [
+          "Black maid complain not that I fly",
+          "I saw fair Chloris walk alone",
+          "If shadows be a picture's excellence",
+          "Why lovely boy why fliest thou me",
+        ],
+        "Add. 22582": [
+          "Black maid complain not that I fly",
+          "Why lovely boy why fliest thou me",
+        ],
+        "Eng. poet. e. 30": [
+          "Black maid complain not that I fly",
+          "Why lovely boy why fliest thou me",
+        ],
+        "V.a.319 (back of ms.)": ["Why lovely boy why fliest thou me"],
+        K0501: [
+          "Black maid complain not that I fly",
+          "Why lovely boy why fliest thou me",
+        ],
+        "Rawl. poet. 116": [
+          "Black maid complain not that I fly",
+          "From Julia's whiter hand a snowball came",
+          "I saw fair Chloris walk alone",
+          "My king turned Ethiopian with the rays",
+          "Why lovely boy why fliest thou me",
+        ],
+        "Add. 22118": [
+          "Black Cypress veils are shrouds of night",
+          "Black maid complain not that I fly",
+          "If shadows be a picture's excellence",
+          "Why lovely boy why fliest thou me",
+        ],
+        "Add. 19268": [
+          "I saw fair Chloris walk alone",
+          "Why lovely boy why fliest thou me",
+        ],
+        "Add. 11811": [
+          "Black Cypress veils are shrouds of night",
+          "Black maid complain not that I fly",
+          "I saw fair Chloris walk alone",
+          "If shadows be a picture's excellence",
+          "Why lovely boy why fliest thou me",
+        ],
+        "Sloane 1446": [
+          "Black maid complain not that I fly",
+          "I saw fair Chloris walk alone",
+          "If shadows be a picture's excellence",
+          "Why lovely boy why fliest thou me",
+        ],
+        "Add. 44963": [
+          "Black Cypress veils are shrouds of night",
+          "Black maid complain not that I fly",
+          "I saw fair Chloris walk alone",
+          "Why lovely boy why fliest thou me",
+        ],
+        "Add. 62134": [
+          "Black maid complain not that I fly",
+          "Why lovely boy why fliest thou me",
+        ],
+        "Eng. misc. e. 13": [
+          "Black maid complain not that I fly",
+          "Why lovely boy why fliest thou me",
+        ],
+        "Eng. poet. f. 16": [
+          "Black maid complain not that I fly",
+          "Why lovely boy why fliest thou me",
+        ],
+        "Lansdowne 777": [
+          "If shadows be a picture's excellence",
+          "Why lovely boy why fliest thou me",
+        ],
+        "Rawl. poet. 84": [
+          "Black maid complain not that I fly",
+          "Why lovely boy why fliest thou me",
+        ],
+        "Sloane 1792": [
+          "Black maid complain not that I fly",
+          "I saw fair Chloris walk alone",
+          "If shadows be a picture's excellence",
+          "Why lovely boy why fliest thou me",
+        ],
+        "V.b.110": [
+          "Black maid complain not that I fly",
+          "Why lovely boy why fliest thou me",
+        ],
+        "V.a.124": [
+          "Black maid complain not that I fly",
+          "I saw fair Chloris walk alone",
+          "If shadows be a picture's excellence",
+          "Why lovely boy why fliest thou me",
+        ],
+        "Add. 15227": [
+          "Black maid complain not that I fly",
+          "I saw fair Chloris walk alone",
+          "Under this marble lies entomb'd a More",
+          "Why lovely boy why fliest thou me",
+        ],
+        "Harley 3511": [
+          "Black Cypress veils are shrouds of night",
+          "Black maid complain not that I fly",
+          "I saw fair Chloris walk alone",
+          "Stand off and let me take the air",
+          "Why lovely boy why fliest thou me",
+        ],
+        "b.205": [
+          "Black maid complain not that I fly",
+          "I can love both fair and brown,",
+          "If shadows be a picture's excellence",
+          "Why lovely boy why fliest thou me",
+        ],
+        "b.62": [
+          "Black maid complain not that I fly",
+          "I saw fair Chloris walk alone",
+          "If shadows be a picture's excellence",
+          "Why lovely boy why fliest thou me",
+        ],
+        G1401B: [
+          "Black maid complain not that I fly",
+          "Have you beheld the little sable beast",
+          "I saw fair Chloris walk alone",
+          "To the red man read thy read,",
+          "Why lovely boy why fliest thou me",
+        ],
+        L0643: [
+          "Black maid complain not that I fly",
+          "Why lovely boy why fliest thou me",
+        ],
+        W3686: [
+          "Black Cypress veils are shrouds of night",
+          "Black maid complain not that I fly",
+          "Grieve not (fair maid) 'cause you are black; so's she",
+          "I saw fair Chloris walk alone",
+          "If shadows be a picture's excellence",
+          "Why lovely boy why fliest thou me",
+        ],
+        "Ashmole 47": [
+          "Black Cypress veils are shrouds of night",
+          "Black maid complain not that I fly",
+          "If shadows be a picture's excellence",
+          "To the red man read thy read,",
+          "Why lovely boy why fliest thou me",
+        ],
+        "Malone 21": [
+          "Black Cypress veils are shrouds of night",
+          "Black maid complain not that I fly",
+          "Why lovely boy why fliest thou me",
+        ],
+        "Rawl. poet. 199": [
+          "Black maid complain not that I fly",
+          "I saw fair Chloris walk alone",
+          "If shadows be a picture's excellence",
+          "Why lovely boy why fliest thou me",
+        ],
+        HM116: [
+          "Black Cypress veils are shrouds of night",
+          "Black maid complain not that I fly",
+          "I saw fair Chloris walk alone",
+          "If shadows be a picture's excellence",
+          "Now black-brow'd night plac't in her chair of jet",
+          "Why lovely boy why fliest thou me",
+        ],
+        "V.a.339": [
+          "Black maid complain not that I fly",
+          "Why lovely boy why fliest thou me",
+        ],
+        "V.a.97": [
+          "Black maid complain not that I fly",
+          "I saw fair Chloris walk alone",
+          "If shadows be a picture's excellence",
+          "The present's black and light as a feather",
+          "Why lovely boy why fliest thou me",
+        ],
+        "V.a.170": [
+          "Black maid complain not that I fly",
+          "I saw fair Chloris walk alone",
+          "If shadows be a picture's excellence",
+          "Why lovely boy why fliest thou me",
+        ],
+        "MS 240/7": [
+          "Black maid complain not that I fly",
+          "If shadows be a picture's excellence",
+          "Why lovely boy why fliest thou me",
+        ],
+        "Add. 30982": [
+          "Black maid complain not that I fly",
+          "I saw fair Chloris walk alone",
+          "If shadows be a picture's excellence",
+          "Stand off and let me take the air",
+          "Why lovely boy why fliest thou me",
+        ],
+        "b.200": [
+          "Black maid complain not that I fly",
+          "I saw fair Chloris walk alone",
+          "If shadows be a picture's excellence",
+          "Why lovely boy why fliest thou me",
+        ],
+        "MS Eng 703": [
+          "Black maid complain not that I fly",
+          "Matchless though black thou art, nature's sweet error",
+          "Why lovely boy why fliest thou me",
+        ],
+        "Harley 6931": [
+          "Black maid complain not that I fly",
+          "I saw fair Chloris walk alone",
+          "If shadows be a picture's excellence",
+          "Why lovely boy why fliest thou me",
+        ],
+        "Corpus Christi 328": [
+          "Black maid complain not that I fly",
+          "I saw fair Chloris walk alone",
+          "If shadows be a picture's excellence",
+          "Why lovely boy why fliest thou me",
+        ],
+        "Rawl. D. 1092 (attr. Strode)": ["Why lovely boy why fliest thou me"],
+        "Rawl. D. 1092": ["Black maid complain not that I fly"],
+        "V.a.319 (back of MS)": ["Black maid complain not that I fly"],
+        "V.a.319": [
+          "I saw fair Chloris walk alone",
+          "If shadows be a picture's excellence",
+        ],
+        "Eng. poet. f. 16 (attr. Donne)": [
+          "If shadows be a picture's excellence",
+        ],
+      };
+
+      const COLORS = { Poem: "#2b8cbe", Manuscript: "#222" };
+
+      // State management for bipartite graph
+      let nodeStates = new Map(); // tracks open/closed state for each node
+      let svgElement = null;
+      let allPoems = [];
+      let allManuscripts = [];
+
+      // Initialize all nodes as closed
+      function initializeNodeStates() {
+        nodeStates.clear();
+        allPoems = Object.keys(POEM_TO_MSS);
+        allManuscripts = Object.keys(MS_TO_POEMS);
+        
+        allPoems.forEach(poem => nodeStates.set(poem, false));
+        allManuscripts.forEach(ms => nodeStates.set(ms, false));
+      }
+
+      // Function to calculate color intensity based on connection count
+      function getNodeColor(nodeType, connectionCount, maxConnections, isOpen = false) {
+        const baseColor = COLORS[nodeType];
+        const intensity = Math.max(
+          0.3,
+          Math.min(1.0, connectionCount / Math.max(1, maxConnections))
+        );
+
+        // Add visual indication for open nodes
+        const openMultiplier = isOpen ? 1.2 : 1.0;
+
+        if (nodeType === "Poem") {
+          const r = Math.min(255, 43 * openMultiplier);
+          const g = Math.min(255, 140 * openMultiplier);
+          const b = Math.min(255, 190 * openMultiplier);
+          return `rgba(${r}, ${g}, ${b}, ${intensity})`;
+        } else {
+          const minLightness = 220;
+          const maxLightness = 34;
+          const lightness = Math.floor(
+            (minLightness - (minLightness - maxLightness) * intensity) / openMultiplier
+          );
+          return `rgb(${lightness}, ${lightness}, ${lightness})`;
+        }
+      }
+
+      // SVG utilities
+      const svgNS = "http://www.w3.org/2000/svg";
+      const viz = document.getElementById("viz");
+      const tooltip = document.getElementById("tip");
+
+      function makeSVG(width, height) {
+        const svg = document.createElementNS(svgNS, "svg");
+        svg.setAttribute("width", width);
+        svg.setAttribute("height", height);
+        svg.style.display = "block";
+        return svg;
+      }
+
+      function showTip(ev, node, isOpen) {
+        const status = isOpen ? "open" : "closed";
+        const connectionCount = node.type === "Poem" 
+          ? (POEM_TO_MSS[node.name] || []).length
+          : (MS_TO_POEMS[node.name] || []).length;
+        tooltip.textContent = `${node.name} (${node.type}) — ${connectionCount} connections — ${status} — click to toggle`;
+        tooltip.style.display = "block";
+        moveTip(ev);
+      }
+
+      function moveTip(ev) {
+        tooltip.style.left = ev.clientX + "px";
+        tooltip.style.top = ev.clientY + "px";
+      }
+
+      function hideTip() {
+        tooltip.style.display = "none";
+      }
+
+      // Text wrapping utility
+      function wrapText(text, maxLength) {
+        if (text.length <= maxLength) return [text];
+        const words = text.split(" ");
+        const lines = [];
+        let currentLine = "";
+
+        for (const word of words) {
+          if ((currentLine + " " + word).length <= maxLength) {
+            currentLine = currentLine ? currentLine + " " + word : word;
+          } else {
+            if (currentLine) lines.push(currentLine);
+            currentLine = word;
+          }
+        }
+        if (currentLine) lines.push(currentLine);
+        return lines;
+      }
+
+      // Toggle node state
+      function toggleNode(nodeId) {
+        const currentState = nodeStates.get(nodeId);
+        nodeStates.set(nodeId, !currentState);
+        drawBipartiteGraph();
+        updateStatusIndicator();
+      }
+
+      // Reset all nodes to closed state
+      function resetAllNodes() {
+        initializeNodeStates();
+        drawBipartiteGraph();
+        updateStatusIndicator();
+      }
+
+      // Update status indicator
+      function updateStatusIndicator() {
+        const openNodes = Array.from(nodeStates.entries()).filter(([id, isOpen]) => isOpen);
+        const statusEl = document.getElementById("statusIndicator");
+        
+        if (openNodes.length === 0) {
+          statusEl.textContent = "Click nodes to explore connections";
+        } else {
+          statusEl.textContent = `${openNodes.length} node${openNodes.length > 1 ? 's' : ''} open`;
+        }
+      }
+
+      // Main drawing function for bipartite graph
+      function drawBipartiteGraph() {
+        viz.innerHTML = `
+          <div class="section-label poems-label">Poems</div>
+          <div class="section-label manuscripts-label">Manuscripts</div>
+        `;
+
+        const width = window.innerWidth;
+        const height = window.innerHeight - 140;
+
+        const svg = makeSVG(width, height);
+        svgElement = svg;
+        viz.appendChild(svg);
+
+        // Calculate layout parameters
+        const margin = 50;
+        const poemX = margin;
+        const manuscriptX = width - margin;
+        const centerX = width / 2;
+
+        // Node sizing
+        const nodeRadius = 8;
+        const nodeSpacing = Math.max(25, height / Math.max(allPoems.length, allManuscripts.length));
+
+        // Calculate maximum connections for color intensity
+        const poemConnectionCounts = allPoems.map(poem => (POEM_TO_MSS[poem] || []).length);
+        const manuscriptConnectionCounts = allManuscripts.map(ms => (MS_TO_POEMS[ms] || []).length);
+        const maxPoemConnections = Math.max(...poemConnectionCounts);
+        const maxManuscriptConnections = Math.max(...manuscriptConnectionCounts);
+
+        // Position poems on the left
+        const poemPositions = new Map();
+        allPoems.forEach((poem, i) => {
+          const y = margin + (i + 0.5) * nodeSpacing;
+          poemPositions.set(poem, { x: poemX, y });
+        });
+
+        // Position manuscripts on the right
+        const manuscriptPositions = new Map();
+        allManuscripts.forEach((manuscript, i) => {
+          const y = margin + (i + 0.5) * nodeSpacing;
+          manuscriptPositions.set(manuscript, { x: manuscriptX, y });
+        });
+
+        // Draw connections first (so they appear behind nodes)
+        drawConnections(svg, poemPositions, manuscriptPositions);
+
+        // Draw poem nodes
+        allPoems.forEach(poem => {
+          const pos = poemPositions.get(poem);
+          const isOpen = nodeStates.get(poem);
+          const connectionCount = (POEM_TO_MSS[poem] || []).length;
+          drawNode(svg, poem, "Poem", pos, connectionCount, maxPoemConnections, isOpen);
+        });
+
+        // Draw manuscript nodes
+        allManuscripts.forEach(manuscript => {
+          const pos = manuscriptPositions.get(manuscript);
+          const isOpen = nodeStates.get(manuscript);
+          const connectionCount = (MS_TO_POEMS[manuscript] || []).length;
+          drawNode(svg, manuscript, "Manuscript", pos, connectionCount, maxManuscriptConnections, isOpen);
+        });
+      }
+
+      // Draw connections between nodes
+      function drawConnections(svg, poemPositions, manuscriptPositions) {
+        // Determine which connections to show
+        const connectionsToShow = new Set();
+
+        // Show connections from open nodes
+        nodeStates.forEach((isOpen, nodeId) => {
+          if (isOpen) {
+            if (allPoems.includes(nodeId)) {
+              // Open poem - show all its manuscript connections
+              (POEM_TO_MSS[nodeId] || []).forEach(manuscript => {
+                connectionsToShow.add(`${nodeId}:${manuscript}`);
+              });
+            } else {
+              // Open manuscript - show all its poem connections
+              (MS_TO_POEMS[nodeId] || []).forEach(poem => {
+                connectionsToShow.add(`${poem}:${nodeId}`);
+              });
+            }
+          }
+        });
+
+        // Draw the connections
+        connectionsToShow.forEach(connectionKey => {
+          const [poemId, manuscriptId] = connectionKey.split(':');
+          const poemPos = poemPositions.get(poemId);
+          const manuscriptPos = manuscriptPositions.get(manuscriptId);
+
+          if (poemPos && manuscriptPos) {
+            const line = document.createElementNS(svgNS, "line");
+            line.setAttribute("x1", poemPos.x + 8); // offset for node radius
+            line.setAttribute("y1", poemPos.y);
+            line.setAttribute("x2", manuscriptPos.x - 8); // offset for node radius
+            line.setAttribute("y2", manuscriptPos.y);
+            line.setAttribute("stroke", "#999");
+            line.setAttribute("stroke-width", "1");
+            line.setAttribute("stroke-opacity", "0.6");
+            svg.appendChild(line);
+          }
+        });
+      }
+
+      // Draw individual node
+      function drawNode(svg, nodeId, nodeType, position, connectionCount, maxConnections, isOpen) {
+        const g = document.createElementNS(svgNS, "g");
+        g.style.cursor = "pointer";
+        g.setAttribute("class", "node-group");
+
+        // Node circle with shadow
+        const shadow = document.createElementNS(svgNS, "circle");
+        shadow.setAttribute("cx", position.x + 1);
+        shadow.setAttribute("cy", position.y + 1);
+        shadow.setAttribute("r", 8);
+        shadow.setAttribute("fill", "rgba(0,0,0,0.1)");
+        g.appendChild(shadow);
+
+        const circle = document.createElementNS(svgNS, "circle");
+        circle.setAttribute("cx", position.x);
+        circle.setAttribute("cy", position.y);
+        circle.setAttribute("r", isOpen ? 10 : 8); // Larger when open
+        circle.setAttribute("fill", getNodeColor(nodeType, connectionCount, maxConnections, isOpen));
+        circle.setAttribute("stroke", isOpen ? "#333" : "#fff");
+        circle.setAttribute("stroke-width", isOpen ? "3" : "2");
+        g.appendChild(circle);
+
+        // Label positioning
+        const labelOffset = 15;
+        const labelX = nodeType === "Poem" 
+          ? position.x + labelOffset 
+          : position.x - labelOffset;
+        const anchor = nodeType === "Poem" ? "start" : "end";
+
+        // Add connection count to label
+        const labelText = `${nodeId} [${connectionCount}]`;
+        const lines = wrapText(labelText, 35);
+        
+        lines.forEach((line, i) => {
+          const label = document.createElementNS(svgNS, "text");
+          label.setAttribute("x", labelX);
+          label.setAttribute("y", position.y + (i - lines.length/2 + 0.5) * 16);
+          label.setAttribute("text-anchor", anchor);
+          label.setAttribute("font-size", "12");
+          label.setAttribute("font-weight", isOpen ? "600" : "400");
+          label.setAttribute("fill", isOpen ? "#000" : "#444");
+          label.textContent = line;
+          g.appendChild(label);
+        });
+
+        // Event handlers
+        g.addEventListener("mouseenter", (ev) => {
+          showTip(ev, { name: nodeId, type: nodeType }, isOpen);
+          circle.setAttribute("r", isOpen ? 12 : 10);
+        });
+        g.addEventListener("mousemove", (ev) => moveTip(ev));
+        g.addEventListener("mouseleave", () => {
+          hideTip();
+          circle.setAttribute("r", isOpen ? 10 : 8);
+        });
+        g.addEventListener("click", () => {
+          toggleNode(nodeId);
+        });
+
+        svg.appendChild(g);
+      }
+
+      // Hero toggle functionality
+      function toggleHero() {
+        const hero = document.getElementById("heroSection");
+        const toggleBtn = document.getElementById("heroToggle");
+
+        hero.classList.toggle("collapsed");
+
+        if (hero.classList.contains("collapsed")) {
+          toggleBtn.textContent = "Show Info";
+        } else {
+          toggleBtn.textContent = "Hide Info";
+        }
+
+        // Redraw visualization with new layout after toggle
+        setTimeout(() => {
+          drawBipartiteGraph();
+        }, 300);
+      }
+
+      // Event listeners
+      document.getElementById("resetBtn").addEventListener("click", resetAllNodes);
+
+      // Resize handler
+      let resizeTimeout;
+      window.addEventListener("resize", function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+          drawBipartiteGraph();
+        }, 250);
+      });
+
+      // Initialize
+      initializeNodeStates();
+      drawBipartiteGraph();
+      updateStatusIndicator();
+    </script>
+  </body>
+</html>
