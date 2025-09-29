@@ -1026,6 +1026,33 @@
         g.style.cursor = "pointer";
         g.setAttribute("class", "node-group");
 
+        // Calculate visible connections to this node (for bold text logic)
+        let visibleConnectionsToThisNode = 0;
+        if (!isOpen) {
+          // Only count for closed nodes
+          nodeStates.forEach((otherIsOpen, otherNodeId) => {
+            if (otherIsOpen && otherNodeId !== nodeId) {
+              if (nodeType === "Poem") {
+                // This is a closed poem - count open manuscripts that connect to it
+                if (allManuscripts.includes(otherNodeId)) {
+                  const manuscriptPoems = MS_TO_POEMS[otherNodeId] || [];
+                  if (manuscriptPoems.includes(nodeId)) {
+                    visibleConnectionsToThisNode++;
+                  }
+                }
+              } else {
+                // This is a closed manuscript - count open poems that connect to it
+                if (allPoems.includes(otherNodeId)) {
+                  const poemManuscripts = POEM_TO_MSS[otherNodeId] || [];
+                  if (poemManuscripts.includes(nodeId)) {
+                    visibleConnectionsToThisNode++;
+                  }
+                }
+              }
+            }
+          });
+        }
+
         // Node circle with shadow
         const nodeRadius = nodeType === "Poem" ? 24 : 8; // Poems: 48px diameter (2x font height), Manuscripts: 16px
         const shadow = document.createElementNS(svgNS, "circle");
@@ -1078,7 +1105,10 @@
           );
           label.setAttribute("text-anchor", anchor);
           label.setAttribute("font-size", fontSize);
-          label.setAttribute("font-weight", isOpen ? "600" : "400");
+          // Bold logic: open nodes are bold, closed nodes with 2+ visible connections are bold
+          const shouldBeBold =
+            isOpen || (!isOpen && visibleConnectionsToThisNode >= 2);
+          label.setAttribute("font-weight", shouldBeBold ? "600" : "400");
           label.setAttribute("fill", isOpen ? "#000" : "#444");
           label.textContent = line;
           g.appendChild(label);
