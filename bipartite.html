@@ -42,7 +42,8 @@
           #f8f9fa 100%
         );
         flex: 1;
-        overflow: hidden;
+        overflow-y: auto; /* Enable vertical scrolling */
+        overflow-x: hidden; /* Prevent horizontal scrolling */
         position: relative;
       }
       .legend {
@@ -858,7 +859,22 @@
         `;
 
         const width = window.innerWidth;
-        const height = window.innerHeight - 140;
+        const viewportHeight = window.innerHeight - 140;
+
+        // Calculate required height for all nodes
+        const poemNodeDiameter = 36; // Reduced: 2x the 18px font size
+        const manuscriptNodeDiameter = 20; // Increased from 16px for better proportion with 14px font
+        const poemMinSpacing = Math.max(poemNodeDiameter + 10, 60); // Ensure no overlap for poems
+        const manuscriptMinSpacing = Math.max(manuscriptNodeDiameter + 8, 30);
+
+        const poemRequiredHeight = allPoems.length * poemMinSpacing;
+        const manuscriptRequiredHeight =
+          allManuscripts.length * manuscriptMinSpacing;
+        const minRequiredHeight =
+          Math.max(poemRequiredHeight, manuscriptRequiredHeight) + 100; // Add margin
+
+        // Use the larger of viewport height or required height
+        const height = Math.max(viewportHeight, minRequiredHeight);
 
         const svg = makeSVG(width, height);
         svgElement = svg;
@@ -871,16 +887,14 @@
         const manuscriptX = width - margin - nodeInset;
         const centerX = width / 2;
 
-        // Node sizing and spacing
-        const poemNodeDiameter = 48; // Large poem nodes
-        const manuscriptNodeDiameter = 16; // Smaller manuscript nodes
-        const poemMinSpacing = Math.max(poemNodeDiameter + 10, 60); // Ensure no overlap for poems
-        const manuscriptMinSpacing = Math.max(manuscriptNodeDiameter + 8, 30); // Tighter spacing for manuscripts
-
-        const poemSpacing = Math.max(poemMinSpacing, height / allPoems.length);
+        // Node sizing and spacing (use already declared variables)
+        const poemSpacing = Math.max(
+          poemMinSpacing,
+          (height - 100) / allPoems.length // Account for margins
+        );
         const manuscriptSpacing = Math.max(
           manuscriptMinSpacing,
-          height / allManuscripts.length
+          (height - 100) / allManuscripts.length // Account for margins
         );
 
         // Calculate maximum connections for color intensity
@@ -898,8 +912,13 @@
         // Calculate vertical centering with separate spacing for each side
         const poemTotalHeight = allPoems.length * poemSpacing;
         const manuscriptTotalHeight = allManuscripts.length * manuscriptSpacing;
-        const poemStartY = (height - poemTotalHeight) / 2;
-        const manuscriptStartY = (height - manuscriptTotalHeight) / 2;
+
+        // Ensure we don't get negative start positions
+        const poemStartY = Math.max(50, (height - poemTotalHeight) / 2);
+        const manuscriptStartY = Math.max(
+          50,
+          (height - manuscriptTotalHeight) / 2
+        );
 
         // Position poems on the left (centered vertically)
         const poemPositions = new Map();
@@ -981,9 +1000,9 @@
 
           if (poemPos && manuscriptPos) {
             const line = document.createElementNS(svgNS, "line");
-            line.setAttribute("x1", poemPos.x + 24); // offset for larger poem node radius
+            line.setAttribute("x1", poemPos.x + 18); // offset for smaller poem node radius (18px)
             line.setAttribute("y1", poemPos.y);
-            line.setAttribute("x2", manuscriptPos.x - 8); // offset for manuscript node radius
+            line.setAttribute("x2", manuscriptPos.x - 10); // offset for larger manuscript node radius (10px)
             line.setAttribute("y2", manuscriptPos.y);
             line.setAttribute("stroke", "#999");
             line.setAttribute("stroke-width", "1");
@@ -1024,12 +1043,18 @@
           "fill",
           getNodeColor(nodeType, connectionCount, maxConnections, isOpen)
         );
-        circle.setAttribute("stroke", isOpen ? "#333" : "#fff");
+        // Different stroke colors for open state based on node type
+        const strokeColor = isOpen
+          ? nodeType === "Poem"
+            ? "#333"
+            : "#2b8cbe" // Poems: dark gray, Manuscripts: dark blue
+          : "#fff"; // Both use white when closed
+        circle.setAttribute("stroke", strokeColor);
         circle.setAttribute("stroke-width", isOpen ? "3" : "2");
         g.appendChild(circle);
 
         // Label positioning (labels on outside)
-        const labelOffset = nodeType === "Poem" ? 35 : 15; // More space for larger poem nodes (24px radius + 10px gap)
+        const labelOffset = nodeType === "Poem" ? 28 : 18; // Increased manuscript offset (10px radius + 8px gap)
         const labelX =
           nodeType === "Poem"
             ? position.x - labelOffset
@@ -1040,8 +1065,8 @@
         const labelText = `${nodeId} [${connectionCount}]`;
         // Poems get more width and larger font, manuscripts stay the same
         const wrapWidth = nodeType === "Poem" ? 50 : 35;
-        const fontSize = nodeType === "Poem" ? "24" : "12";
-        const lineHeight = nodeType === "Poem" ? 28 : 16;
+        const fontSize = nodeType === "Poem" ? "18" : "14"; // Increased manuscript font from 12 to 14
+        const lineHeight = nodeType === "Poem" ? 22 : 18; // Increased manuscript line height from 16 to 18
         const lines = wrapText(labelText, wrapWidth);
 
         lines.forEach((line, i) => {
