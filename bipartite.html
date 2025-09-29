@@ -237,24 +237,6 @@
         font-weight: 600;
         border: 1px solid #2b8cbe;
       }
-      .section-label {
-        position: absolute;
-        font-family: "Cinzel", serif;
-        font-size: 18px;
-        font-weight: 500;
-        color: #666;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        z-index: 5;
-      }
-      .poems-label {
-        left: 20px;
-        top: 20px;
-      }
-      .manuscripts-label {
-        right: 20px;
-        top: 20px;
-      }
     </style>
   </head>
   <body>
@@ -294,10 +276,7 @@
       </div>
     </header>
 
-    <div id="viz">
-      <div class="section-label poems-label">Poems</div>
-      <div class="section-label manuscripts-label">Manuscripts</div>
-    </div>
+    <div id="viz"></div>
     <div id="tip" class="tooltip"></div>
 
     <footer>
@@ -853,10 +832,7 @@
 
       // Main drawing function for bipartite graph
       function drawBipartiteGraph() {
-        viz.innerHTML = `
-          <div class="section-label poems-label">Poems</div>
-          <div class="section-label manuscripts-label">Manuscripts</div>
-        `;
+        viz.innerHTML = ``;
 
         const width = window.innerWidth;
         const viewportHeight = window.innerHeight - 140;
