@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Tracing Race in the Archive - Poem Similarity Heatmap</title>
+    <!-- Renaissance-inspired typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Cinzel:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        font-family: "Georgia", "Adobe Garamond Pro", "Garamond",
+          "Times New Roman", "Book Antiqua", serif;
+        font-feature-settings: "liga" 1, "dlig" 1, "kern" 1;
+        text-rendering: optimizeLegibility;
+        display: flex;
+        flex-direction: column;
+      }
+      header {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding: 8px 16px;
+        border-bottom: 1px solid #eee;
+        flex-wrap: wrap;
+        background: #fafafa;
+      }
+      #viz {
+        width: 100%;
+        height: calc(100vh - 140px);
+        background: #fafafa;
+        flex: 1;
+        overflow: auto;
+        position: relative;
+      }
+      .legend {
+        margin-left: auto;
+        display: inline-flex;
+        gap: 16px;
+        align-items: center;
+      }
+      .key {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .tooltip {
+        position: fixed;
+        pointer-events: none;
+        background: rgba(0, 0, 0, 0.9);
+        color: #fff;
+        font-size: 13px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        transform: translate(-50%, -120%);
+        white-space: nowrap;
+        z-index: 10;
+        display: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      }
+      .hero {
+        background: linear-gradient(
+            135deg,
+            rgba(43, 140, 190, 0.9),
+            rgba(0, 0, 0, 0.7)
+          ),
+          url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImIiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIgZmlsbD0iIzMzMyIgZmlsbC1vcGFjaXR5PSIwLjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjYikiLz48L3N2Zz4=")
+            repeat;
+        color: white;
+        padding: 30px 20px;
+        text-align: center;
+        position: relative;
+        border-bottom: 3px solid #2b8cbe;
+      }
+      .hero::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iMjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzMzMyIgc3Ryb2tlLXdpZHRoPSIwLjUiIHN0cm9rZS1vcGFjaXR5PSIwLjE1Ii8+PGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iMzAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzMzMyIgc3Ryb2tlLXdpZHRoPSIwLjMiIHN0cm9rZS1vcGFjaXR5PSIwLjEiLz48L3N2Zz4=")
+          repeat;
+        opacity: 0.3;
+      }
+      .hero-content {
+        position: relative;
+        z-index: 1;
+        max-width: 900px;
+        margin: 0 auto;
+      }
+      .hero h1 {
+        font-family: "Cinzel", "Trajan Pro", "Optima", serif;
+        font-size: 2.8rem;
+        margin: 0 0 16px 0;
+        font-weight: 400;
+        letter-spacing: 2px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        text-transform: uppercase;
+      }
+      .hero h2 {
+        font-family: "Crimson Text", "Adobe Garamond Pro", "Garamond", serif;
+        font-size: 1.3rem;
+        margin: 0 0 24px 0;
+        font-weight: 400;
+        opacity: 0.95;
+        font-style: italic;
+        letter-spacing: 0.5px;
+      }
+      .hero-toggle {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        z-index: 10;
+      }
+      .hero-toggle:hover {
+        background: rgba(255, 255, 255, 0.3);
+        border-color: rgba(255, 255, 255, 0.5);
+      }
+      .hero.collapsed {
+        padding: 12px 20px;
+        min-height: auto;
+      }
+      .hero.collapsed .hero-content > *:not(h1) {
+        display: none;
+      }
+      .hero.collapsed .hero-content h1 {
+        font-size: 1.8rem;
+        margin: 0;
+      }
+      /* When hero is expanded, move toggle to bottom right */
+      .hero:not(.collapsed) .hero-toggle {
+        top: auto;
+        bottom: 15px;
+        right: 15px;
+      }
+      /* Beautiful link styling */
+      a {
+        color: #2b8cbe;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        position: relative;
+        border-bottom: 2px solid transparent;
+      }
+      a:hover {
+        color: #1a6b8f;
+        border-bottom-color: #2b8cbe;
+      }
+      /* Special styling for links in hero section */
+      .hero a {
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 600;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+      }
+      .hero a:hover {
+        color: white;
+        border-bottom-color: rgba(255, 255, 255, 0.8);
+        text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+      }
+      /* Footer styling */
+      footer {
+        background: #f8f9fa;
+        border-top: 1px solid #eee;
+        padding: 16px 20px;
+        text-align: center;
+        font-size: 14px;
+        color: #666;
+        margin-top: auto;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 1000;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      footer .footer-content {
+        max-width: 900px;
+        margin: 0 auto;
+      }
+      footer p {
+        margin: 0;
+        font-family: "Crimson Text", serif;
+        letter-spacing: 0.2px;
+      }
+      footer a {
+        color: #2b8cbe;
+        font-weight: 500;
+      }
+      footer a:hover {
+        color: #1a6b8f;
+      }
+      /* Heatmap specific styles */
+      .controls {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .control-group {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .control-group label {
+        font-size: 14px;
+        font-weight: 500;
+        color: #666;
+      }
+      select {
+        padding: 4px 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+        font-family: "Crimson Text", serif;
+      }
+      button {
+        background: #2b8cbe;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Crimson Text", serif;
+      }
+      button:hover {
+        background: #1a6b8f;
+      }
+      .status-indicator {
+        background: #e8f4f8;
+        color: #2b8cbe;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        border: 1px solid #2b8cbe;
+      }
+      /* Heatmap matrix styles */
+      .heatmap-container {
+        padding: 20px;
+        overflow: auto;
+        position: relative;
+        background: white;
+        border-radius: 8px;
+        margin: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .heatmap-matrix {
+        display: inline-block;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .heatmap-row {
+        display: flex;
+        margin: 0;
+        padding: 0;
+      }
+      .heatmap-cell {
+        width: 20px;
+        height: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .heatmap-cell:hover {
+        stroke: #333;
+        stroke-width: 2px;
+        transform: scale(1.1);
+        z-index: 5;
+        position: relative;
+      }
+      .heatmap-labels {
+        font-size: 14px;
+        font-family: "Crimson Text", serif;
+        fill: #333;
+        font-weight: 500;
+      }
+      .poem-label {
+        text-anchor: end;
+        font-weight: 600;
+      }
+      .manuscript-label {
+        text-anchor: start;
+        font-weight: 500;
+      }
+      .color-scale {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin: 20px 0;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        border: 1px solid #e9ecef;
+      }
+      .scale-bar {
+        width: 300px;
+        height: 20px;
+        background: linear-gradient(
+          to right,
+          #ffffff,
+          #e3f2fd,
+          #90caf9,
+          #42a5f5,
+          #1976d2,
+          #0d47a1
+        );
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+      }
+      .scale-labels {
+        display: flex;
+        justify-content: space-between;
+        width: 300px;
+        font-size: 12px;
+        color: #666;
+        margin-top: 5px;
+      }
+      .scale-title {
+        font-weight: 600;
+        color: #333;
+        font-size: 14px;
+      }
+      .matrix-stats {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+        font-size: 14px;
+        color: #666;
+      }
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+      }
+      .stat-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .stat-value {
+        font-weight: 600;
+        color: #2b8cbe;
+      }
+    </style>
+  </head>
+  <body>
+    <section class="hero collapsed" id="heroSection">
+      <button class="hero-toggle" id="heroToggle" onclick="toggleHero()">
+        Show Info
+      </button>
+      <div class="hero-content">
+        <h1>Tracing Race in the Archive</h1>
+        <h2>Poem Similarity Heatmap</h2>
+        <p>
+          This heatmap shows the similarity between poems based on shared
+          manuscript appearances. Each cell represents the percentage of
+          manuscripts that two poems have in common. Darker blue indicates
+          higher manuscript overlap, revealing clusters of poems that frequently
+          appear together in the same sources.
+        </p>
+        <p>
+          The diagonal shows each poem compared to itself (100% similarity).
+          Off-diagonal patterns reveal poem relationships - dense blue regions
+          indicate groups of poems that share many manuscripts, suggesting
+          thematic, authorial, or temporal connections. This view helps identify
+          which poems have similar transmission patterns through the manuscript
+          tradition.
+        </p>
+      </div>
+    </section>
+
+    <header>
+      <div class="controls">
+        <div class="control-group">
+          <label for="sortPoems">Sort poems by:</label>
+          <select id="sortPoems">
+            <option value="alphabetical">Alphabetical</option>
+            <option value="connections">Connection count</option>
+            <option value="clustering" selected>Clustering</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label for="threshold">Similarity threshold:</label>
+          <select id="threshold">
+            <option value="0">Show all (0%+)</option>
+            <option value="10">10%+ similarity</option>
+            <option value="20" selected>20%+ similarity</option>
+            <option value="30">30%+ similarity</option>
+            <option value="50">50%+ similarity</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label for="matrixDisplay">Matrix display:</label>
+          <select id="matrixDisplay">
+            <option value="upper" selected>Upper diagonal</option>
+            <option value="lower">Lower diagonal</option>
+            <option value="full">Full matrix</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <button id="exportBtn">Export Image</button>
+        </div>
+        <div id="statusIndicator" class="status-indicator">
+          Hover cells for details
+        </div>
+      </div>
+      <div class="legend">
+        <span class="key">
+          <span
+            style="
+              width: 12px;
+              height: 12px;
+              background: #ffffff;
+              border: 1px solid #ddd;
+              display: inline-block;
+              border-radius: 2px;
+            "
+          ></span>
+          0% overlap
+        </span>
+        <span class="key">
+          <span
+            style="
+              width: 12px;
+              height: 12px;
+              background: #42a5f5;
+              border: 1px solid #ddd;
+              display: inline-block;
+              border-radius: 2px;
+            "
+          ></span>
+          50% overlap
+        </span>
+        <span class="key">
+          <span
+            style="
+              width: 12px;
+              height: 12px;
+              background: #0d47a1;
+              border: 1px solid #ddd;
+              display: inline-block;
+              border-radius: 2px;
+            "
+          ></span>
+          100% overlap
+        </span>
+      </div>
+    </header>
+
+    <div id="viz">
+      <div class="heatmap-container">
+        <div class="matrix-stats" id="matrixStats"></div>
+        <div class="color-scale">
+          <span class="scale-title">Manuscript overlap percentage:</span>
+          <div>
+            <div class="scale-bar"></div>
+            <div class="scale-labels">
+              <span>0%</span>
+              <span>20%</span>
+              <span>40%</span>
+              <span>60%</span>
+              <span>80%</span>
+              <span>100%</span>
+            </div>
+          </div>
+        </div>
+        <div id="heatmapMatrix"></div>
+      </div>
+    </div>
+    <div id="tip" class="tooltip"></div>
+
+    <footer>
+      <div class="footer-content">
+        <p>
+          Analysis by <a href="#">Thomas Ward</a> • Visualization by
+          <a href="https://github.com/willf">Will Fitzgerald</a> Made with ❤️.
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      const POEM_TO_MSS = {
+        "Why lovely boy why fliest thou me": [
+          "Add. 11811",
+          "Add. 15227",
+          "Add. 19268",
+          "Add. 22118",
+          "Add. 22582",
+          "Add. 30982",
+          "Add. 44963",
+          "Add. 62134",
+          "Ashmole 47",
+          "Corpus Christi 328",
+          "Eng. misc. e. 13",
+          "Eng. poet. e. 30",
+          "Eng. poet. f. 16",
+          "G1401B",
+          "HM116",
+          "Harley 3511",
+          "Harley 6931",
+          "K0501",
+          "L0643",
+          "Lansdowne 777",
+          "MS 240/7",
+          "MS Eng 703",
+          "Malone 21",
+          "Rawl. D. 1092 (attr. Strode)",
+          "Rawl. poet. 116",
+          "Rawl. poet. 199",
+          "Rawl. poet. 84",
+          "Sloane 1446",
+          "Sloane 1792",
+          "Sloane 542",
+          "V.a.124",
+          "V.a.148.1",
+          "V.a.170",
+          "V.a.319 (back of ms.)",
+          "V.a.322",
+          "V.a.339",
+          "V.a.97",
+          "V.b.110",
+          "V.b.43",
+          "W3686",
+          "b.200",
+          "b.205",
+          "b.62",
+        ],
+        "Black Cypress veils are shrouds of night": [
+          "Add. 11811",
+          "Add. 22118",
+          "Add. 44963",
+          "Ashmole 47",
+          "HM116",
+          "Harley 3511",
+          "Malone 21",
+          "V.a.322",
+          "W3686",
+        ],
+        "Black maid complain not that I fly": [
+          "Add. 11811",
+          "Add. 15227",
+          "Add. 22118",
+          "Add. 22582",
+          "Add. 30982",
+          "Add. 44963",
+          "Add. 62134",
+          "Ashmole 47",
+          "Corpus Christi 328",
+          "Eng. misc. e. 13",
+          "Eng. poet. e. 30",
+          "Eng. poet. f. 16",
+          "G1401B",
+          "HM116",
+          "Harley 3511",
+          "Harley 6931",
+          "K0501",
+          "L0643",
+          "MS 240/7",
+          "MS Eng 703",
+          "Malone 21",
+          "Rawl. D. 1092",
+          "Rawl. poet. 116",
+          "Rawl. poet. 199",
+          "Rawl. poet. 84",
+          "Sloane 1446",
+          "Sloane 1792",
+          "V.a.124",
+          "V.a.148.1",
+          "V.a.170",
+          "V.a.319 (back of MS)",
+          "V.a.322",
+          "V.a.339",
+          "V.a.97",
+          "V.b.110",
+          "V.b.43",
+          "W3686",
+          "b.200",
+          "b.205",
+          "b.62",
+        ],
+        "From Julia's whiter hand a snowball came": ["Rawl. poet. 116"],
+        "My king turned Ethiopian with the rays": ["Rawl. poet. 116"],
+        "Have you beheld the little sable beast": ["G1401B"],
+        "Let it no longer be a forlorn hope": ["V.a.148.1"],
+        "I saw fair Chloris walk alone": [
+          "Add. 11811",
+          "Add. 15227",
+          "Add. 19268",
+          "Add. 30982",
+          "Add. 44963",
+          "Corpus Christi 328",
+          "G1401B",
+          "HM116",
+          "Harley 3511",
+          "Harley 6931",
+          "Rawl. poet. 116",
+          "Rawl. poet. 199",
+          "Sloane 1446",
+          "Sloane 1792",
+          "V.a.124",
+          "V.a.148.1",
+          "V.a.170",
+          "V.a.319",
+          "V.a.97",
+          "V.b.43",
+          "W3686",
+          "b.200",
+          "b.62",
+        ],
+        "Thou'rt fair and black thy brows as black as jet": ["V.a.148.1"],
+        "Stand off and let me take the air": ["Add. 30982", "Harley 3511"],
+        "If shadows be a picture's excellence": [
+          "Add. 11811",
+          "Add. 22118",
+          "Add. 30982",
+          "Ashmole 47",
+          "Corpus Christi 328",
+          "Eng. poet. f. 16 (attr. Donne)",
+          "HM116",
+          "Harley 6931",
+          "Lansdowne 777",
+          "MS 240/7",
+          "Rawl. poet. 199",
+          "Sloane 1446",
+          "Sloane 1792",
+          "Sloane 542",
+          "V.a.124",
+          "V.a.170",
+          "V.a.319",
+          "V.a.322",
+          "V.a.97",
+          "V.b.43",
+          "W3686",
+          "b.200",
+          "b.205",
+          "b.62",
+        ],
+        "The present's black and light as a feather": ["V.a.97"],
+        "Now black-brow'd night plac't in her chair of jet": ["HM116"],
+        "I can love both fair and brown,": ["b.205"],
+        "Matchless though black thou art, nature's sweet error": ["MS Eng 703"],
+        "Grieve not (fair maid) 'cause you are black; so's she": ["W3686"],
+        "To the red man read thy read,": ["Ashmole 47", "G1401B"],
+        "Under this marble lies entomb'd a More": ["Add. 15227"],
+      };
+
+      // Global variables
+      let poems = [];
+      let similarityMatrix = [];
+      let currentSort = "clustering";
+      let currentThreshold = 20;
+      let currentMatrixDisplay = "upper";
+
+      // Initialize the heatmap
+      function initializeHeatmap() {
+        prepareData();
+        calculateStatistics();
+        drawHeatmap();
+      }
+
+      function prepareData() {
+        // Get all poems
+        poems = Object.keys(POEM_TO_MSS);
+
+        // Sort based on current settings
+        sortData();
+
+        // Create similarity matrix
+        similarityMatrix = poems.map((poem1) =>
+          poems.map((poem2) => calculateSimilarity(poem1, poem2))
+        );
+      }
+
+      function calculateSimilarity(poem1, poem2) {
+        if (poem1 === poem2) return 100; // Same poem = 100% similarity
+
+        const mss1 = new Set(POEM_TO_MSS[poem1]);
+        const mss2 = new Set(POEM_TO_MSS[poem2]);
+
+        // Calculate Jaccard similarity (intersection over union)
+        const intersection = new Set([...mss1].filter((x) => mss2.has(x)));
+        const union = new Set([...mss1, ...mss2]);
+
+        return union.size > 0
+          ? Math.round((intersection.size / union.size) * 100)
+          : 0;
+      }
+
+      function sortData() {
+        // Sort poems
+        poems.sort((a, b) => {
+          switch (currentSort) {
+            case "connections":
+              return POEM_TO_MSS[b].length - POEM_TO_MSS[a].length;
+            case "clustering":
+              return calculateClusteringScore(b) - calculateClusteringScore(a);
+            default: // alphabetical
+              return a.localeCompare(b);
+          }
+        });
+      }
+
+      function calculateClusteringScore(poem) {
+        // Calculate average similarity with all other poems
+        const poemMss = POEM_TO_MSS[poem];
+        let totalSimilarity = 0;
+        let count = 0;
+
+        Object.keys(POEM_TO_MSS).forEach((otherPoem) => {
+          if (otherPoem !== poem) {
+            totalSimilarity += calculateSimilarity(poem, otherPoem);
+            count++;
+          }
+        });
+
+        return count > 0 ? totalSimilarity / count : 0;
+      }
+
+      function calculateStatistics() {
+        const totalCells = poems.length * poems.length;
+        const similarities = similarityMatrix
+          .flat()
+          .filter((sim) => sim > 0 && sim < 100); // Exclude self-similarities
+
+        const avgSimilarity =
+          similarities.length > 0
+            ? (
+                similarities.reduce((sum, val) => sum + val, 0) /
+                similarities.length
+              ).toFixed(1)
+            : 0;
+
+        const maxSimilarity =
+          similarities.length > 0 ? Math.max(...similarities) : 0;
+        const highSimilarity = similarities.filter((sim) => sim >= 50).length;
+        const mediumSimilarity = similarities.filter(
+          (sim) => sim >= 20 && sim < 50
+        ).length;
+        const lowSimilarity = similarities.filter(
+          (sim) => sim > 0 && sim < 20
+        ).length;
+
+        // Find most similar poem pair
+        let maxSim = 0;
+        let mostSimilarPair = ["", ""];
+        for (let i = 0; i < poems.length; i++) {
+          for (let j = i + 1; j < poems.length; j++) {
+            if (similarityMatrix[i][j] > maxSim) {
+              maxSim = similarityMatrix[i][j];
+              mostSimilarPair = [poems[i], poems[j]];
+            }
+          }
+        }
+
+        const statsHtml = `
+          <div class="stats-grid">
+            <div class="stat-item">
+              <span>Matrix size:</span>
+              <span class="stat-value">${poems.length} × ${poems.length}</span>
+            </div>
+            <div class="stat-item">
+              <span>Average similarity:</span>
+              <span class="stat-value">${avgSimilarity}%</span>
+            </div>
+            <div class="stat-item">
+              <span>Maximum similarity:</span>
+              <span class="stat-value">${maxSimilarity}%</span>
+            </div>
+            <div class="stat-item">
+              <span>High similarity (50%+):</span>
+              <span class="stat-value">${highSimilarity} pairs</span>
+            </div>
+            <div class="stat-item">
+              <span>Medium similarity (20-49%):</span>
+              <span class="stat-value">${mediumSimilarity} pairs</span>
+            </div>
+            <div class="stat-item">
+              <span>Low similarity (1-19%):</span>
+              <span class="stat-value">${lowSimilarity} pairs</span>
+            </div>
+            <div class="stat-item">
+              <span>Most similar pair:</span>
+              <span class="stat-value">${truncateText(
+                mostSimilarPair[0],
+                25
+              )} ↔ ${truncateText(mostSimilarPair[1], 25)} (${maxSim}%)</span>
+            </div>
+          </div>
+        `;
+
+        document.getElementById("matrixStats").innerHTML = statsHtml;
+      }
+
+      function drawHeatmap() {
+        const container = document.getElementById("heatmapMatrix");
+        container.innerHTML = "";
+
+        console.log("Drawing heatmap with", poems.length, "poems");
+        console.log("Current matrix display:", currentMatrixDisplay);
+
+        // Create SVG
+        const cellSize = 25;
+        const labelWidth = 400;
+        const labelHeight = 120;
+        const width = labelWidth + poems.length * cellSize + 50;
+        const height = labelHeight + poems.length * cellSize + 50;
+
+        const svg = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "svg"
+        );
+        svg.setAttribute("width", width);
+        svg.setAttribute("height", height);
+        svg.style.background = "white";
+        container.appendChild(svg);
+
+        // Draw poem labels (Y-axis)
+        poems.forEach((poem, i) => {
+          const text = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "text"
+          );
+          text.setAttribute("x", labelWidth - 10);
+          text.setAttribute("y", labelHeight + i * cellSize + cellSize / 2);
+          text.setAttribute("class", "heatmap-labels poem-label");
+          text.setAttribute("text-anchor", "end");
+          text.setAttribute("dominant-baseline", "middle");
+          text.setAttribute("font-size", "14");
+          text.textContent = truncateText(poem, 50);
+          svg.appendChild(text);
+        });
+
+        // Draw poem labels (X-axis) - rotated
+        poems.forEach((poem, i) => {
+          const text = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "text"
+          );
+          text.setAttribute("x", labelWidth + i * cellSize + cellSize / 2);
+          text.setAttribute("y", labelHeight - 25);
+          text.setAttribute("class", "heatmap-labels manuscript-label");
+          text.setAttribute("text-anchor", "start");
+          text.setAttribute(
+            "transform",
+            `rotate(-45, ${labelWidth + i * cellSize + cellSize / 2}, ${
+              labelHeight - 25
+            })`
+          );
+          text.setAttribute("font-size", "13");
+          text.textContent = getFirstThreeWords(poem);
+          svg.appendChild(text);
+        });
+
+        // Draw matrix cells (based on display mode)
+        poems.forEach((poem1, i) => {
+          poems.forEach((poem2, j) => {
+            // Filter based on matrix display mode
+            let shouldDraw = true;
+            if (currentMatrixDisplay === "upper" && (j < i || i === j)) {
+              shouldDraw = false;
+            } else if (currentMatrixDisplay === "lower" && (j > i || i === j)) {
+              shouldDraw = false;
+            }
+            // For 'full', shouldDraw remains true (includes diagonal)
+
+            if (!shouldDraw) return;
+
+            const similarity = similarityMatrix[i][j];
+            const rect = document.createElementNS(
+              "http://www.w3.org/2000/svg",
+              "rect"
+            );
+
+            // Only show cells above threshold (except diagonal for full matrix)
+            const showCell =
+              similarity >= currentThreshold ||
+              (i === j && currentMatrixDisplay === "full");
+
+            rect.setAttribute("x", labelWidth + j * cellSize);
+            rect.setAttribute("y", labelHeight + i * cellSize);
+            rect.setAttribute("width", cellSize - 1);
+            rect.setAttribute("height", cellSize - 1);
+            rect.setAttribute(
+              "fill",
+              showCell ? getSimilarityColor(similarity) : "#f8f9fa"
+            );
+            rect.setAttribute("stroke", "#fff");
+            rect.setAttribute("stroke-width", "1");
+            rect.style.cursor = "pointer";
+
+            // Add hover effects
+            rect.addEventListener("mouseenter", (e) =>
+              showCellTooltip(e, poem1, poem2, similarity)
+            );
+            rect.addEventListener("mousemove", (e) => moveCellTooltip(e));
+            rect.addEventListener("mouseleave", hideCellTooltip);
+
+            svg.appendChild(rect);
+          });
+        });
+      }
+
+      function getSimilarityColor(similarity) {
+        // Color scale from white (0%) to dark blue (100%)
+        const colors = [
+          "#ffffff", // 0%
+          "#e3f2fd", // 20%
+          "#90caf9", // 40%
+          "#42a5f5", // 60%
+          "#1976d2", // 80%
+          "#0d47a1", // 100%
+        ];
+
+        const index = Math.min(Math.floor(similarity / 20), 5);
+        return colors[index];
+      }
+
+      function truncateText(text, maxLength) {
+        if (text.length <= maxLength) return text;
+        return text.substring(0, maxLength - 3) + "...";
+      }
+
+      function getFirstThreeWords(text) {
+        const words = text.split(" ");
+        return words.slice(0, 3).join(" ") + "...";
+      }
+
+      // Tooltip functions
+      function showCellTooltip(event, poem1, poem2, similarity) {
+        const tooltip = document.getElementById("tip");
+
+        if (poem1 === poem2) {
+          tooltip.innerHTML = `
+            <strong>Same poem</strong><br>
+            ${truncateText(poem1, 40)}<br>
+            Manuscripts: ${POEM_TO_MSS[poem1].length}
+          `;
+        } else {
+          const sharedMss = POEM_TO_MSS[poem1].filter((ms) =>
+            POEM_TO_MSS[poem2].includes(ms)
+          );
+          tooltip.innerHTML = `
+            <strong>${similarity}% manuscript overlap</strong><br>
+            Poem 1: ${truncateText(poem1, 30)} (${
+            POEM_TO_MSS[poem1].length
+          } mss)<br>
+            Poem 2: ${truncateText(poem2, 30)} (${
+            POEM_TO_MSS[poem2].length
+          } mss)<br>
+            Shared manuscripts: ${sharedMss.length}
+          `;
+        }
+
+        tooltip.style.display = "block";
+        moveCellTooltip(event);
+
+        // Update status
+        document.getElementById("statusIndicator").textContent =
+          poem1 === poem2
+            ? `Self: ${truncateText(poem1, 20)}`
+            : `${similarity}% overlap: ${truncateText(
+                poem1,
+                15
+              )} ↔ ${truncateText(poem2, 15)}`;
+      }
+
+      function moveCellTooltip(event) {
+        const tooltip = document.getElementById("tip");
+        tooltip.style.left = event.clientX + 10 + "px";
+        tooltip.style.top = event.clientY - 50 + "px";
+      }
+
+      function hideCellTooltip() {
+        document.getElementById("tip").style.display = "none";
+        document.getElementById("statusIndicator").textContent =
+          "Hover cells for details";
+      }
+
+      // Control handlers
+      function updateSorting() {
+        currentSort = document.getElementById("sortPoems").value;
+        initializeHeatmap();
+      }
+
+      function updateThreshold() {
+        currentThreshold = parseInt(document.getElementById("threshold").value);
+        drawHeatmap(); // Only need to redraw, not recalculate
+      }
+
+      function updateMatrixDisplay() {
+        currentMatrixDisplay = document.getElementById("matrixDisplay").value;
+        drawHeatmap(); // Only need to redraw, not recalculate
+      }
+
+      function exportImage() {
+        const svg = document.querySelector("#heatmapMatrix svg");
+        const svgData = new XMLSerializer().serializeToString(svg);
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        const img = new Image();
+
+        img.onload = function () {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
+
+          const link = document.createElement("a");
+          link.download = "poem-similarity-heatmap.png";
+          link.href = canvas.toDataURL();
+          link.click();
+        };
+
+        img.src = "data:image/svg+xml;base64," + btoa(svgData);
+      }
+
+      // Hero toggle functionality
+      function toggleHero() {
+        const hero = document.getElementById("heroSection");
+        const toggleBtn = document.getElementById("heroToggle");
+
+        hero.classList.toggle("collapsed");
+
+        if (hero.classList.contains("collapsed")) {
+          toggleBtn.textContent = "Show Info";
+        } else {
+          toggleBtn.textContent = "Hide Info";
+        }
+
+        // Redraw visualization with new layout after toggle
+        setTimeout(() => {
+          initializeHeatmap();
+        }, 300);
+      }
+
+      // Event listeners
+      document
+        .getElementById("sortPoems")
+        .addEventListener("change", updateSorting);
+      document
+        .getElementById("threshold")
+        .addEventListener("change", updateThreshold);
+      document
+        .getElementById("matrixDisplay")
+        .addEventListener("change", updateMatrixDisplay);
+      document
+        .getElementById("exportBtn")
+        .addEventListener("click", exportImage);
+
+      // Resize handler
+      let resizeTimeout;
+      window.addEventListener("resize", function () {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+          initializeHeatmap();
+        }, 250);
+      });
+
+      // Initialize
+      initializeHeatmap();
+    </script>
+  </body>
+</html>

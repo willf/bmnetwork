@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Tracing Race in the Archive - Force Network</title>
+    <!-- Renaissance-inspired typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Cinzel:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        font-family: "Georgia", "Adobe Garamond Pro", "Garamond",
+          "Times New Roman", "Book Antiqua", serif;
+        font-feature-settings: "liga" 1, "dlig" 1, "kern" 1;
+        text-rendering: optimizeLegibility;
+        display: flex;
+        flex-direction: column;
+      }
+      header {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding: 8px 16px;
+        border-bottom: 1px solid #eee;
+        flex-wrap: wrap;
+        background: #fafafa;
+      }
+      #viz {
+        width: 100%;
+        height: calc(100vh - 140px);
+        background: radial-gradient(
+          ellipse at center,
+          #f8f9fa 0%,
+          #ffffff 100%
+        );
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+      }
+      .legend {
+        margin-left: auto;
+        display: inline-flex;
+        gap: 16px;
+        align-items: center;
+      }
+      .key {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .swatch {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #777;
+        display: inline-block;
+      }
+      .tooltip {
+        position: fixed;
+        pointer-events: none;
+        background: rgba(0, 0, 0, 0.9);
+        color: #fff;
+        font-size: 13px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        transform: translate(-50%, -120%);
+        white-space: nowrap;
+        z-index: 10;
+        display: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      }
+      .hero {
+        background: linear-gradient(
+            135deg,
+            rgba(43, 140, 190, 0.9),
+            rgba(0, 0, 0, 0.7)
+          ),
+          url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImIiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIgZmlsbD0iIzMzMyIgZmlsbC1vcGFjaXR5PSIwLjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjYikiLz48L3N2Zz4=")
+            repeat;
+        color: white;
+        padding: 30px 20px;
+        text-align: center;
+        position: relative;
+        border-bottom: 3px solid #2b8cbe;
+      }
+      .hero::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iMjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzMzMyIgc3Ryb2tlLXdpZHRoPSIwLjUiIHN0cm9rZS1vcGFjaXR5PSIwLjE1Ii8+PGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iMzAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzMzMyIgc3Ryb2tlLXdpZHRoPSIwLjMiIHN0cm9rZS1vcGFjaXR5PSIwLjEiLz48L3N2Zz4=")
+          repeat;
+        opacity: 0.3;
+      }
+      .hero-content {
+        position: relative;
+        z-index: 1;
+        max-width: 900px;
+        margin: 0 auto;
+      }
+      .hero h1 {
+        font-family: "Cinzel", "Trajan Pro", "Optima", serif;
+        font-size: 2.8rem;
+        margin: 0 0 16px 0;
+        font-weight: 400;
+        letter-spacing: 2px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        text-transform: uppercase;
+      }
+      .hero h2 {
+        font-family: "Crimson Text", "Adobe Garamond Pro", "Garamond", serif;
+        font-size: 1.3rem;
+        margin: 0 0 24px 0;
+        font-weight: 400;
+        opacity: 0.95;
+        font-style: italic;
+        letter-spacing: 0.5px;
+      }
+      .hero-toggle {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        z-index: 10;
+      }
+      .hero-toggle:hover {
+        background: rgba(255, 255, 255, 0.3);
+        border-color: rgba(255, 255, 255, 0.5);
+      }
+      .hero.collapsed {
+        padding: 12px 20px;
+        min-height: auto;
+      }
+      .hero.collapsed .hero-content > *:not(h1) {
+        display: none;
+      }
+      .hero.collapsed .hero-content h1 {
+        font-size: 1.8rem;
+        margin: 0;
+      }
+      /* When hero is expanded, move toggle to bottom right */
+      .hero:not(.collapsed) .hero-toggle {
+        top: auto;
+        bottom: 15px;
+        right: 15px;
+      }
+      /* Beautiful link styling */
+      a {
+        color: #2b8cbe;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        position: relative;
+        border-bottom: 2px solid transparent;
+      }
+      a:hover {
+        color: #1a6b8f;
+        border-bottom-color: #2b8cbe;
+      }
+      /* Special styling for links in hero section */
+      .hero a {
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 600;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+      }
+      .hero a:hover {
+        color: white;
+        border-bottom-color: rgba(255, 255, 255, 0.8);
+        text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+      }
+      /* Footer styling */
+      footer {
+        background: #f8f9fa;
+        border-top: 1px solid #eee;
+        padding: 16px 20px;
+        text-align: center;
+        font-size: 14px;
+        color: #666;
+        margin-top: auto;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 1000;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      footer .footer-content {
+        max-width: 900px;
+        margin: 0 auto;
+      }
+      footer p {
+        margin: 0;
+        font-family: "Crimson Text", serif;
+        letter-spacing: 0.2px;
+      }
+      footer a {
+        color: #2b8cbe;
+        font-weight: 500;
+      }
+      footer a:hover {
+        color: #1a6b8f;
+      }
+      /* Force network specific styles */
+      .controls {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .control-group {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .control-group label {
+        font-size: 14px;
+        font-weight: 500;
+        color: #666;
+      }
+      .slider {
+        width: 120px;
+        height: 4px;
+        border-radius: 2px;
+        background: #ddd;
+        outline: none;
+        -webkit-appearance: none;
+      }
+      .slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #2b8cbe;
+        cursor: pointer;
+      }
+      .slider::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #2b8cbe;
+        cursor: pointer;
+        border: none;
+      }
+      button {
+        background: #2b8cbe;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Crimson Text", serif;
+      }
+      button:hover {
+        background: #1a6b8f;
+      }
+      .status-indicator {
+        background: #e8f4f8;
+        color: #2b8cbe;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        border: 1px solid #2b8cbe;
+      }
+      /* Node and link styling */
+      .node {
+        cursor: pointer;
+        stroke-width: 2px;
+      }
+      .node:hover {
+        stroke-width: 3px;
+      }
+      .link {
+        stroke: #999;
+        stroke-opacity: 0.4;
+        stroke-width: 1px;
+      }
+      .link.highlighted {
+        stroke: #2b8cbe;
+        stroke-opacity: 0.8;
+        stroke-width: 2px;
+      }
+      .node-label {
+        font-size: 11px;
+        font-family: "Crimson Text", serif;
+        fill: #444;
+        text-anchor: middle;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+      .node-label.visible {
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <section class="hero collapsed" id="heroSection">
+      <button class="hero-toggle" id="heroToggle" onclick="toggleHero()">
+        Show Info
+      </button>
+      <div class="hero-content">
+        <h1>Tracing Race in the Archive</h1>
+        <h2>Force Network</h2>
+        <p>
+          This force-directed network visualization reveals natural clustering
+          patterns in the manuscript-poem connections. Nodes are positioned by
+          simulated physics - highly connected works gravitate toward the
+          center, while related clusters form organically. Drag nodes to explore
+          relationships, adjust forces to see different organizational patterns.
+        </p>
+      </div>
+    </section>
+
+    <header>
+      <div class="controls">
+        <div class="control-group">
+          <button id="resetBtn">Reset Positions</button>
+          <button id="pauseBtn">Pause</button>
+        </div>
+        <div class="control-group">
+          <label for="chargeSlider">Repulsion:</label>
+          <input
+            type="range"
+            id="chargeSlider"
+            class="slider"
+            min="-1000"
+            max="-50"
+            value="-300"
+          />
+        </div>
+        <div class="control-group">
+          <label for="linkSlider">Link Strength:</label>
+          <input
+            type="range"
+            id="linkSlider"
+            class="slider"
+            min="0.1"
+            max="2"
+            step="0.1"
+            value="1"
+          />
+        </div>
+        <div class="control-group">
+          <label for="centerSlider">Gravity:</label>
+          <input
+            type="range"
+            id="centerSlider"
+            class="slider"
+            min="0"
+            max="0.5"
+            step="0.05"
+            value="0.1"
+          />
+        </div>
+        <div id="statusIndicator" class="status-indicator">
+          Physics simulation running
+        </div>
+      </div>
+      <div class="legend">
+        <span class="key">
+          <span class="swatch" style="background: #2b8cbe"></span> Poem
+        </span>
+        <span class="key">
+          <span class="swatch" style="background: #666"></span> Manuscript
+        </span>
+        <span style="margin-left: 8px; color: #666">
+          (Drag nodes • Hover for connections)
+        </span>
+      </div>
+    </header>
+
+    <div id="viz"></div>
+    <div id="tip" class="tooltip"></div>
+
+    <footer>
+      <div class="footer-content">
+        <p>
+          Analysis by <a href="#">Thomas Ward</a> • Visualization by
+          <a href="https://github.com/willf">Will Fitzgerald</a> Made with ❤️.
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      const POEM_TO_MSS = {
+        "Why lovely boy why fliest thou me": [
+          "Add. 11811",
+          "Add. 15227",
+          "Add. 19268",
+          "Add. 22118",
+          "Add. 22582",
+          "Add. 30982",
+          "Add. 44963",
+          "Add. 62134",
+          "Ashmole 47",
+          "Corpus Christi 328",
+          "Eng. misc. e. 13",
+          "Eng. poet. e. 30",
+          "Eng. poet. f. 16",
+          "G1401B",
+          "HM116",
+          "Harley 3511",
+          "Harley 6931",
+          "K0501",
+          "L0643",
+          "Lansdowne 777",
+          "MS 240/7",
+          "MS Eng 703",
+          "Malone 21",
+          "Rawl. D. 1092 (attr. Strode)",
+          "Rawl. poet. 116",
+          "Rawl. poet. 199",
+          "Rawl. poet. 84",
+          "Sloane 1446",
+          "Sloane 1792",
+          "Sloane 542",
+          "V.a.124",
+          "V.a.148.1",
+          "V.a.170",
+          "V.a.319 (back of ms.)",
+          "V.a.322",
+          "V.a.339",
+          "V.a.97",
+          "V.b.110",
+          "V.b.43",
+          "W3686",
+          "b.200",
+          "b.205",
+          "b.62",
+        ],
+        "Black Cypress veils are shrouds of night": [
+          "Add. 11811",
+          "Add. 22118",
+          "Add. 44963",
+          "Ashmole 47",
+          "HM116",
+          "Harley 3511",
+          "Malone 21",
+          "V.a.322",
+          "W3686",
+        ],
+        "Black maid complain not that I fly": [
+          "Add. 11811",
+          "Add. 15227",
+          "Add. 22118",
+          "Add. 22582",
+          "Add. 30982",
+          "Add. 44963",
+          "Add. 62134",
+          "Ashmole 47",
+          "Corpus Christi 328",
+          "Eng. misc. e. 13",
+          "Eng. poet. e. 30",
+          "Eng. poet. f. 16",
+          "G1401B",
+          "HM116",
+          "Harley 3511",
+          "Harley 6931",
+          "K0501",
+          "L0643",
+          "MS 240/7",
+          "MS Eng 703",
+          "Malone 21",
+          "Rawl. D. 1092",
+          "Rawl. poet. 116",
+          "Rawl. poet. 199",
+          "Rawl. poet. 84",
+          "Sloane 1446",
+          "Sloane 1792",
+          "V.a.124",
+          "V.a.148.1",
+          "V.a.170",
+          "V.a.319 (back of MS)",
+          "V.a.322",
+          "V.a.339",
+          "V.a.97",
+          "V.b.110",
+          "V.b.43",
+          "W3686",
+          "b.200",
+          "b.205",
+          "b.62",
+        ],
+        "From Julia's whiter hand a snowball came": ["Rawl. poet. 116"],
+        "My king turned Ethiopian with the rays": ["Rawl. poet. 116"],
+        "Have you beheld the little sable beast": ["G1401B"],
+        "Let it no longer be a forlorn hope": ["V.a.148.1"],
+        "I saw fair Chloris walk alone": [
+          "Add. 11811",
+          "Add. 15227",
+          "Add. 19268",
+          "Add. 30982",
+          "Add. 44963",
+          "Corpus Christi 328",
+          "G1401B",
+          "HM116",
+          "Harley 3511",
+          "Harley 6931",
+          "Rawl. poet. 116",
+          "Rawl. poet. 199",
+          "Sloane 1446",
+          "Sloane 1792",
+          "V.a.124",
+          "V.a.148.1",
+          "V.a.170",
+          "V.a.319",
+          "V.a.97",
+          "V.b.43",
+          "W3686",
+          "b.200",
+          "b.62",
+        ],
+        "Thou'rt fair and black thy brows as black as jet": ["V.a.148.1"],
+        "Stand off and let me take the air": ["Add. 30982", "Harley 3511"],
+        "If shadows be a picture's excellence": [
+          "Add. 11811",
+          "Add. 22118",
+          "Add. 30982",
+          "Ashmole 47",
+          "Corpus Christi 328",
+          "Eng. poet. f. 16 (attr. Donne)",
+          "HM116",
+          "Harley 6931",
+          "Lansdowne 777",
+          "MS 240/7",
+          "Rawl. poet. 199",
+          "Sloane 1446",
+          "Sloane 1792",
+          "Sloane 542",
+          "V.a.124",
+          "V.a.170",
+          "V.a.319",
+          "V.a.322",
+          "V.a.97",
+          "V.b.43",
+          "W3686",
+          "b.200",
+          "b.205",
+          "b.62",
+        ],
+        "The present's black and light as a feather": ["V.a.97"],
+        "Now black-brow'd night plac't in her chair of jet": ["HM116"],
+        "I can love both fair and brown,": ["b.205"],
+        "Matchless though black thou art, nature's sweet error": ["MS Eng 703"],
+        "Grieve not (fair maid) 'cause you are black; so's she": ["W3686"],
+        "To the red man read thy read,": ["Ashmole 47", "G1401B"],
+        "Under this marble lies entomb'd a More": ["Add. 15227"],
+      };
+
+      // Force simulation variables
+      let simulation;
+      let svg;
+      let link, node, label;
+      let nodes, links;
+      let width, height;
+      let isPaused = false;
+
+      // SVG utilities
+      const svgNS = "http://www.w3.org/2000/svg";
+      const viz = document.getElementById("viz");
+      const tooltip = document.getElementById("tip");
+
+      // Initialize the force network
+      function initializeForceNetwork() {
+        width = window.innerWidth;
+        height = window.innerHeight - 140;
+
+        // Clear previous visualization
+        viz.innerHTML = "";
+
+        // Create SVG
+        svg = document.createElementNS(svgNS, "svg");
+        svg.setAttribute("width", width);
+        svg.setAttribute("height", height);
+        svg.style.display = "block";
+        viz.appendChild(svg);
+
+        // Prepare data
+        prepareNetworkData();
+
+        // Create force simulation
+        createSimulation();
+
+        // Draw network
+        drawNetwork();
+      }
+
+      function prepareNetworkData() {
+        const nodeMap = new Map();
+        nodes = [];
+        links = [];
+
+        // Create poem nodes
+        Object.keys(POEM_TO_MSS).forEach((poem) => {
+          const connectionCount = POEM_TO_MSS[poem].length;
+          const node = {
+            id: poem,
+            type: "poem",
+            connections: connectionCount,
+            name: poem,
+          };
+          nodes.push(node);
+          nodeMap.set(poem, node);
+        });
+
+        // Create manuscript nodes
+        const manuscripts = new Set();
+        Object.values(POEM_TO_MSS)
+          .flat()
+          .forEach((ms) => manuscripts.add(ms));
+
+        manuscripts.forEach((manuscript) => {
+          // Count connections to this manuscript
+          const connectionCount = Object.keys(POEM_TO_MSS).filter((poem) =>
+            POEM_TO_MSS[poem].includes(manuscript)
+          ).length;
+
+          const node = {
+            id: manuscript,
+            type: "manuscript",
+            connections: connectionCount,
+            name: manuscript,
+          };
+          nodes.push(node);
+          nodeMap.set(manuscript, node);
+        });
+
+        // Create links
+        Object.entries(POEM_TO_MSS).forEach(([poem, manuscripts]) => {
+          manuscripts.forEach((manuscript) => {
+            links.push({
+              source: nodeMap.get(poem),
+              target: nodeMap.get(manuscript),
+            });
+          });
+        });
+      }
+
+      function createSimulation() {
+        simulation = d3
+          .forceSimulation(nodes)
+          .force(
+            "link",
+            d3
+              .forceLink(links)
+              .id((d) => d.id)
+              .strength(1)
+          )
+          .force("charge", d3.forceManyBody().strength(-300))
+          .force("center", d3.forceCenter(width / 2, height / 2))
+          .force(
+            "collision",
+            d3.forceCollide().radius((d) => getNodeRadius(d) + 2)
+          )
+          .on("tick", ticked);
+      }
+
+      function getNodeRadius(d) {
+        if (d.type === "poem") {
+          return Math.max(8, Math.min(20, 5 + d.connections * 0.5));
+        } else {
+          return Math.max(5, Math.min(15, 3 + d.connections * 0.8));
+        }
+      }
+
+      function getNodeColor(d) {
+        const intensity = Math.max(0.3, Math.min(1.0, d.connections / 20));
+
+        if (d.type === "poem") {
+          return `rgba(43, 140, 190, ${intensity})`;
+        } else {
+          const lightness = Math.floor(220 - (220 - 60) * intensity);
+          return `rgb(${lightness}, ${lightness}, ${lightness})`;
+        }
+      }
+
+      function drawNetwork() {
+        // Create links
+        const linkGroup = document.createElementNS(svgNS, "g");
+        linkGroup.setAttribute("class", "links");
+        svg.appendChild(linkGroup);
+
+        links.forEach((d) => {
+          const line = document.createElementNS(svgNS, "line");
+          line.setAttribute("class", "link");
+          line.setAttribute("stroke", "#999");
+          line.setAttribute("stroke-opacity", "0.4");
+          line.setAttribute("stroke-width", "1");
+          linkGroup.appendChild(line);
+          d.element = line;
+        });
+
+        // Create nodes
+        const nodeGroup = document.createElementNS(svgNS, "g");
+        nodeGroup.setAttribute("class", "nodes");
+        svg.appendChild(nodeGroup);
+
+        nodes.forEach((d) => {
+          const circle = document.createElementNS(svgNS, "circle");
+          circle.setAttribute("class", "node");
+          circle.setAttribute("r", getNodeRadius(d));
+          circle.setAttribute("fill", getNodeColor(d));
+          circle.setAttribute("stroke", "#fff");
+          circle.setAttribute("stroke-width", "2");
+          circle.style.cursor = "pointer";
+
+          // Add event listeners
+          circle.addEventListener("mouseenter", (e) => showTooltip(e, d));
+          circle.addEventListener("mousemove", (e) => moveTooltip(e));
+          circle.addEventListener("mouseleave", hideTooltip);
+          circle.addEventListener("mousedown", (e) => startDrag(e, d));
+
+          nodeGroup.appendChild(circle);
+          d.element = circle;
+        });
+
+        // Create labels (initially hidden)
+        const labelGroup = document.createElementNS(svgNS, "g");
+        labelGroup.setAttribute("class", "labels");
+        svg.appendChild(labelGroup);
+
+        nodes.forEach((d) => {
+          const text = document.createElementNS(svgNS, "text");
+          text.setAttribute("class", "node-label");
+          text.setAttribute("font-size", d.type === "poem" ? "12" : "10");
+          text.setAttribute("fill", "#444");
+          text.setAttribute("text-anchor", "middle");
+          text.setAttribute("dy", "0.35em");
+          text.textContent = truncateText(d.name, d.type === "poem" ? 25 : 20);
+          labelGroup.appendChild(text);
+          d.label = text;
+        });
+      }
+
+      function truncateText(text, maxLength) {
+        if (text.length <= maxLength) return text;
+        return text.substring(0, maxLength - 3) + "...";
+      }
+
+      function ticked() {
+        // Update link positions
+        links.forEach((d) => {
+          if (d.element) {
+            d.element.setAttribute("x1", d.source.x);
+            d.element.setAttribute("y1", d.source.y);
+            d.element.setAttribute("x2", d.target.x);
+            d.element.setAttribute("y2", d.target.y);
+          }
+        });
+
+        // Update node positions
+        nodes.forEach((d) => {
+          if (d.element) {
+            d.element.setAttribute("cx", d.x);
+            d.element.setAttribute("cy", d.y);
+          }
+          if (d.label) {
+            d.label.setAttribute("x", d.x);
+            d.label.setAttribute("y", d.y + getNodeRadius(d) + 15);
+          }
+        });
+      }
+
+      // Drag functionality
+      let draggedNode = null;
+
+      function startDrag(event, d) {
+        event.preventDefault();
+        draggedNode = d;
+        d.fx = d.x;
+        d.fy = d.y;
+
+        document.addEventListener("mousemove", drag);
+        document.addEventListener("mouseup", endDrag);
+
+        simulation.alphaTarget(0.3).restart();
+      }
+
+      function drag(event) {
+        if (draggedNode) {
+          const rect = svg.getBoundingClientRect();
+          draggedNode.fx = event.clientX - rect.left;
+          draggedNode.fy = event.clientY - rect.top;
+        }
+      }
+
+      function endDrag() {
+        if (draggedNode) {
+          draggedNode.fx = null;
+          draggedNode.fy = null;
+          draggedNode = null;
+        }
+
+        document.removeEventListener("mousemove", drag);
+        document.removeEventListener("mouseup", endDrag);
+
+        simulation.alphaTarget(0);
+      }
+
+      // Tooltip functions
+      function showTooltip(event, d) {
+        tooltip.textContent = `${d.name} (${d.type}) — ${d.connections} connections`;
+        tooltip.style.display = "block";
+        moveTooltip(event);
+
+        // Highlight connected nodes and links
+        highlightConnections(d);
+
+        // Show label for this node
+        if (d.label) {
+          d.label.classList.add("visible");
+        }
+      }
+
+      function moveTooltip(event) {
+        tooltip.style.left = event.clientX + "px";
+        tooltip.style.top = event.clientY + "px";
+      }
+
+      function hideTooltip() {
+        tooltip.style.display = "none";
+        clearHighlights();
+
+        // Hide all labels
+        nodes.forEach((d) => {
+          if (d.label) {
+            d.label.classList.remove("visible");
+          }
+        });
+      }
+
+      function highlightConnections(node) {
+        // Reset all highlights
+        clearHighlights();
+
+        // Highlight connected links and nodes
+        links.forEach((link) => {
+          if (link.source === node || link.target === node) {
+            link.element.classList.add("highlighted");
+
+            // Highlight connected node
+            const connectedNode =
+              link.source === node ? link.target : link.source;
+            if (connectedNode.element) {
+              connectedNode.element.style.strokeWidth = "3px";
+              connectedNode.element.style.stroke = "#2b8cbe";
+            }
+          }
+        });
+      }
+
+      function clearHighlights() {
+        // Clear link highlights
+        links.forEach((link) => {
+          if (link.element) {
+            link.element.classList.remove("highlighted");
+          }
+        });
+
+        // Clear node highlights
+        nodes.forEach((node) => {
+          if (node.element) {
+            node.element.style.strokeWidth = "2px";
+            node.element.style.stroke = "#fff";
+          }
+        });
+      }
+
+      // Control handlers
+      function resetPositions() {
+        simulation.alpha(1).restart();
+        updateStatus("Simulation restarted");
+      }
+
+      function togglePause() {
+        const pauseBtn = document.getElementById("pauseBtn");
+        if (isPaused) {
+          simulation.restart();
+          pauseBtn.textContent = "Pause";
+          isPaused = false;
+          updateStatus("Simulation running");
+        } else {
+          simulation.stop();
+          pauseBtn.textContent = "Resume";
+          isPaused = true;
+          updateStatus("Simulation paused");
+        }
+      }
+
+      function updateSimulationForces() {
+        const chargeStrength = parseFloat(
+          document.getElementById("chargeSlider").value
+        );
+        const linkStrength = parseFloat(
+          document.getElementById("linkSlider").value
+        );
+        const centerStrength = parseFloat(
+          document.getElementById("centerSlider").value
+        );
+
+        simulation
+          .force("charge", d3.forceManyBody().strength(chargeStrength))
+          .force(
+            "link",
+            d3
+              .forceLink(links)
+              .id((d) => d.id)
+              .strength(linkStrength)
+          )
+          .force(
+            "center",
+            d3.forceCenter(width / 2, height / 2).strength(centerStrength)
+          );
+
+        simulation.alpha(0.3).restart();
+      }
+
+      function updateStatus(message) {
+        document.getElementById("statusIndicator").textContent = message;
+      }
+
+      // Hero toggle functionality
+      function toggleHero() {
+        const hero = document.getElementById("heroSection");
+        const toggleBtn = document.getElementById("heroToggle");
+
+        hero.classList.toggle("collapsed");
+
+        if (hero.classList.contains("collapsed")) {
+          toggleBtn.textContent = "Show Info";
+        } else {
+          toggleBtn.textContent = "Hide Info";
+        }
+
+        // Redraw visualization with new layout after toggle
+        setTimeout(() => {
+          initializeForceNetwork();
+        }, 300);
+      }
+
+      // Event listeners
+      document
+        .getElementById("resetBtn")
+        .addEventListener("click", resetPositions);
+      document
+        .getElementById("pauseBtn")
+        .addEventListener("click", togglePause);
+      document
+        .getElementById("chargeSlider")
+        .addEventListener("input", updateSimulationForces);
+      document
+        .getElementById("linkSlider")
+        .addEventListener("input", updateSimulationForces);
+      document
+        .getElementById("centerSlider")
+        .addEventListener("input", updateSimulationForces);
+
+      // Resize handler
+      let resizeTimeout;
+      window.addEventListener("resize", function () {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+          initializeForceNetwork();
+        }, 250);
+      });
+
+      // Initialize - Load D3.js and start
+      function loadD3AndInitialize() {
+        if (typeof d3 === "undefined") {
+          const script = document.createElement("script");
+          script.src = "https://d3js.org/d3.v7.min.js";
+          script.onload = initializeForceNetwork;
+          document.head.appendChild(script);
+        } else {
+          initializeForceNetwork();
+        }
+      }
+
+      // Start the visualization
+      loadD3AndInitialize();
+    </script>
+  </body>
+</html>
