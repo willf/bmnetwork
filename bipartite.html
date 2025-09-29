@@ -251,7 +251,7 @@
           This bipartite visualization shows poems on the left and manuscripts
           on the right. Click any node to toggle its connections. Nodes start in
           a "closed" state showing no connections except backlinks from other
-          open nodes. Click to "open" a node and reveal all its connections.
+          open nodes. Click to select a node and reveal its connections.
         </p>
         <p>Check out <a href="index.html"> this alternate view</a>!</p>
       </div>
@@ -762,7 +762,7 @@
       }
 
       function showTip(ev, node, isOpen) {
-        const status = isOpen ? "open" : "closed";
+        const status = isOpen ? "selected" : "closed";
         const connectionCount =
           node.type === "Poem"
             ? (POEM_TO_MSS[node.name] || []).length
@@ -827,7 +827,7 @@
         } else {
           statusEl.textContent = `${openNodes.length} node${
             openNodes.length > 1 ? "s" : ""
-          } open`;
+          } selected`;
         }
       }
 
