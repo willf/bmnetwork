@@ -132,6 +132,12 @@
         overflow: hidden;
         flex-shrink: 0;
       }
+      .viz-screenshot img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
       .viz-screenshot:hover {
         background: #e9ecef;
       }
@@ -615,10 +621,7 @@
             class="viz-screenshot"
             onclick="window.open('bipartite.html', '_blank')"
           >
-            <div class="screenshot-placeholder">
-              Screenshot Placeholder<br />
-              <small>Bipartite Graph</small>
-            </div>
+            <img src="screenshots/bipartite.png" alt="Bipartite Graph Screenshot" />
           </div>
           <div class="viz-content">
             <h3 class="viz-title">Bipartite Graph</h3>
@@ -640,10 +643,7 @@
             class="viz-screenshot"
             onclick="window.open('heatmap.html', '_blank')"
           >
-            <div class="screenshot-placeholder">
-              Screenshot Placeholder<br />
-              <small>Poem-source Matrix</small>
-            </div>
+            <img src="screenshots/heatmap.png" alt="Heatmap Screenshot" />
           </div>
           <div class="viz-content">
             <h3 class="viz-title">Poem:Source Matrix</h3>
@@ -665,10 +665,7 @@
             class="viz-screenshot"
             onclick="window.open('heatmap2.html', '_blank')"
           >
-            <div class="screenshot-placeholder">
-              Screenshot Placeholder<br />
-              <small>Poem Similarity Matrix</small>
-            </div>
+            <img src="screenshots/heatmap2.png" alt="Poem Similarity Matrix Screenshot" />
           </div>
           <div class="viz-content">
             <h3 class="viz-title">Poem Similarity Matrix</h3>
@@ -690,10 +687,7 @@
             class="viz-screenshot"
             onclick="window.open('heatmap3.html', '_blank')"
           >
-            <div class="screenshot-placeholder">
-              Screenshot Placeholder<br />
-              <small>source Similarity Matrix</small>
-            </div>
+            <img src="screenshots/heatmap3.png" alt="Source Similarity Matrix Screenshot" />
           </div>
           <div class="viz-content">
             <h3 class="viz-title">Source Similarity Matrix</h3>
@@ -713,10 +707,7 @@
             class="viz-screenshot"
             onclick="window.open('circle.html', '_blank')"
           >
-            <div class="screenshot-placeholder">
-              Screenshot Placeholder<br />
-              <small>Circular Network</small>
-            </div>
+            <img src="screenshots/circle.png" alt="Circular Network Screenshot" />
           </div>
           <div class="viz-content">
             <h3 class="viz-title">Circular Network</h3>
@@ -736,10 +727,7 @@
             class="viz-screenshot"
             onclick="window.open('force.html', '_blank')"
           >
-            <div class="screenshot-placeholder">
-              Screenshot Placeholder<br />
-              <small>Force-Directed Network</small>
-            </div>
+            <img src="screenshots/force.png" alt="Force-Directed Network Screenshot" />
           </div>
           <div class="viz-content">
             <h3 class="viz-title">Force-Directed Network</h3>
